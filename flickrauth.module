@@ -1,4 +1,6 @@
 <?php
+// $Id: flickrauth.module,v 1.2 2004/10/01 00:08:32 uwe Exp $
+
 /* Commented out until bug fixed */
 /*
 function flickrauth_help($section) {
