@@ -1,0 +1,66 @@
+<?php
+/* Commented out until bug fixed */
+/*
+function flickrauth_help($section) {
+  switch($section) {
+    case "admin/system/modules#flickrauth":
+      $output = "flickrauth";
+      break;
+    case "admin/system/modules#description":
+      $output = "Enables remote flickr authentication.";
+      break;
+    default:
+      $output = "flickrauth";
+      break;
+  }
+  return $output;
+}
+*/
+
+/**
+ * Implementation of hook_info().
+ */
+function flickrauth_info($field = 0) {
+  $info['name'] = 'Flickr authentication';
+  $info['protocol'] = 'XML-RPC';
+
+  if ($field) {
+    return $info[$field];
+  }
+  else {
+    return $info;
+  }
+}
+
+function _flickr_rest_request($method, $params) {
+  $appkey = "9c922d3e2cc2d4029f7482cc78404372";
+  $restloc = "http://www.flickr.com/services/rest/";
+
+  $request = "$restloc?method=$method&api_key=$appkey";
+
+  foreach($params as $key => $val) {
+    $request .= "&$key=";
+    $request .= urlencode($val);
+  }
+
+  $response = implode('', file($request));
+  preg_match("/rsp stat=\"(.*)\"/i", $response, $matches);
+  $stat = $matches[1];
+  $answer["response"] = $response;
+  $answer["stat"] = $stat;
+  if ($stat == "fail") {
+    preg_match("/err code=\"(.*)\" msg=\"(.*)\"/i", $response, $matches);
+    $code = $matches[1];
+    $msg = $matches[2];
+    $answer["code"] = $code;
+    $answer["msg"] = $msg;
+  }
+
+  return $answer;
+}
+
+function flickrauth_auth($name, $pass, $server) {
+  $login = _flickr_rest_request("flickr.test.login", array("email" => "$name@$server", "password" => $pass));
+  return ($login["stat"] == "ok") ? 1 : 0;
+}
+?>
