@@ -1,0 +1,188 @@
+<?php
+
+// $Id: flickr.module,v 1.1 2006/09/18 01:41:18 drewish Exp $
+
+include(drupal_get_path('module', 'flickr') .'/flickr.inc');
+
+/**
+ * Implementation of hook_help().
+ */
+function flickr_help($section) {
+  switch ($section) {
+    case 'admin/help#flickr':
+      return t('The flickr module uses XML-RPC to connect to Flickr\'s API and retreive photo information.');
+    case 'admin/modules#description':
+      return t('Access photos on Flickr using their public API.');
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function flickr_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/flickr', 'title' => t('flickr'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('flickr_admin_settings'),
+      'access' => user_access('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+      'description' => t('Change settings for the flickr module.'));
+
+
+    $items[] = array(
+      'path' => 'flickr', 'title' => t('flickr test'),
+      'access' => user_access('access content'),
+      'type' => MENU_NORMAL_ITEM,
+      'callback' => 'flickr_test');
+
+    $items[] = array(
+      'path' => 'flickr/auth',
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+      'callback' => 'flickr_auth_callback');
+
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_settings
+ */
+function flickr_admin_settings() {
+  $form['#validate'] = array('flickr_admin_settings_validate' => array());
+  $form['flickr_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Key'),
+    '#default_value' => variable_get('flickr_api_key', ''),
+    '#description' => t('API Key from Flickr'),
+  );
+  $form['flickr_api_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Shared Secret'),
+    '#default_value' => variable_get('flickr_api_secret', ''),
+    '#description' => t("API key's secret from Flickr."),
+  );
+  return system_settings_form($form);
+}
+
+function flickr_admin_settings_validate($form_id, $form) {
+  if ($form['flickr_api_key'] && (preg_match('/^[A-Fa-f\d]{32}$/', $form['flickr_api_key']) != 1)) {
+    form_set_error('flickr_api_key', t('This does not appear to be a Flickr API key.'));
+  }
+  if ($form['flickr_api_secret'] && (preg_match('/^[A-Fa-f\d]{16}$/', $form['flickr_api_secret']) != 1)) {
+    form_set_error('flickr_api_secret', t('This does not appear to be a Flickr API secret.'));
+  }
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function flickr_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0]['info'] = t('Flickr recent by user');
+    return $blocks;
+  }
+  else if ($op == 'configure') {
+    $form = array();
+
+    switch ($delta) {
+    case 0:
+      $form['flickr_block_0_user_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Flickr User Id'),
+        '#default_value' => variable_get('flickr_block_0_user_id', ''),
+        '#description' => t('The user id of a Flickr user.'),
+      );
+      $form['flickr_block_0_show_last'] = array(
+        '#type' => 'select',
+        '#options' => array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30'),
+        '#title' => t('Show the last <em>n</em> photos'),
+        '#default_value' => variable_get('flickr_block_0_show_last', 5),
+        '#description' => t('The block will show this many of the users most recent photos.')
+      );
+      break;
+    }
+    return $form;
+  }
+  else if ($op == 'save') {
+    switch($delta) {
+      case 0:
+        variable_set('flickr_block_0_user_id', $edit['flickr_block_0_user_id']);
+        variable_set('flickr_block_0_show_last', $edit['flickr_block_0_show_last']);
+        break;
+      case 1:
+        break;
+    }
+  }
+  else if ($op == 'view') {
+    switch ($delta) {
+    case 0:
+      $user_id = variable_get('flickr_block_0_user_id', '');
+      $show_n = variable_get('flickr_block_0_show_last', 5);
+      $size = 't';
+      $block['subject'] = t('Recent Flickr');
+      $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
+      break;
+    }
+    return $block;
+  }
+}
+
+function _flickr_block_recent($user_id, $show_n, $size) {
+  $result = flickr_request(
+    'flickr.photos.search',
+    array(
+      'user_id' => $user_id,
+      'per_page' => $show_n,
+    )
+  );
+  $output = '';
+  foreach((array)$result->children as $photo) {
+    $output .= theme('flickr_photo', $photo, $size);
+  }
+  return $output;
+}
+
+
+function flickr_test() {
+  $result = flickr_request(
+    'flickr.photos.search',
+    array(
+      'user_id' => variable_get('flickr_uid','26159919@N00'),
+      'text' => 'etta',
+      'per_page' => '16'
+    )
+  );
+
+  $output = '';
+  foreach($result->children as $photo) {
+    $output .= theme('flickr_photo', $photo, 't');
+  }
+  $output .= "<pre>". print_r($result, true) ."</pre>";
+
+  return $output;
+}
+
+
+
+function theme_flickr_photo($photo, $size = NULL, $format = NULL) {
+  $img_url = flickr_photo_img($photo, $size, $format);
+  $img = theme('image', $img_url, $photo->attributes['title'], $photo->attributes['title'], array('class' => 'flickr'), FALSE);
+  $photo_url = flickr_photo_page_url($photo->attributes['owner'], $photo->attributes['id']);
+  return "<a href='$photo_url'>$img</a>";
+
+}
+
+function flickr_photo_img($photo, $size = NULL, $format = NULL) {
+  $p = $photo->attributes;
+  return 'http://static.flickr.com/'. $p['server'] .'/'. $p['id'] .'_'. $p['secret'] .($size ? '_' .$size : '') .'.'. ($size == 'o' ? $format : 'jpg');
+}
+
+function flickr_photo_page_url($owner, $id = NULL) {
+  return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
+}
