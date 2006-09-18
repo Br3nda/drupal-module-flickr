@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.1 2006/09/18 01:41:18 drewish Exp $
+// $Id: flickr.module,v 1.2 2006/09/18 17:59:52 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -84,12 +84,13 @@ function flickr_admin_settings_validate($form_id, $form) {
  */
 function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
-    $blocks[0]['info'] = t('Flickr recent by user');
+    $blocks[0]['info'] = t('Flickr recent photos by user');
+    $blocks[1]['info'] = t('Flickr photosets by user');
     return $blocks;
   }
   else if ($op == 'configure') {
     $form = array();
-
+    $count_options = array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30');
     switch ($delta) {
     case 0:
       $form['flickr_block_0_user_id'] = array(
@@ -100,10 +101,25 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       );
       $form['flickr_block_0_show_last'] = array(
         '#type' => 'select',
-        '#options' => array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30'),
+        '#options' => $count_options,
         '#title' => t('Show the last <em>n</em> photos'),
         '#default_value' => variable_get('flickr_block_0_show_last', 5),
-        '#description' => t('The block will show this many of the users most recent photos.')
+        '#description' => t("The block will show this many of the user's most recent photos.")
+      );
+      break;
+    case 1:
+      $form['flickr_block_1_user_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Flickr User Id'),
+        '#default_value' => variable_get('flickr_block_1_user_id', ''),
+        '#description' => t('The user id of a Flickr user.'),
+      );
+      $form['flickr_block_1_show_last'] = array(
+        '#type' => 'select',
+        '#options' => $count_options,
+        '#title' => t('Show the last <em>n</em> photosets'),
+        '#default_value' => variable_get('flickr_block_1_show_last', 5),
+        '#description' => t("The block will show this many of the user's photosets.")
       );
       break;
     }
@@ -116,6 +132,8 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
         variable_set('flickr_block_0_show_last', $edit['flickr_block_0_show_last']);
         break;
       case 1:
+        variable_set('flickr_block_1_user_id', $edit['flickr_block_1_user_id']);
+        variable_set('flickr_block_1_show_last', $edit['flickr_block_1_show_last']);
         break;
     }
   }
@@ -124,9 +142,16 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     case 0:
       $user_id = variable_get('flickr_block_0_user_id', '');
       $show_n = variable_get('flickr_block_0_show_last', 5);
-      $size = 't';
+      $size = 's';
       $block['subject'] = t('Recent Flickr');
       $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
+      break;
+    case 1:
+      $user_id = variable_get('flickr_block_1_user_id', '');
+      $show_n = variable_get('flickr_block_1_show_last', 5);
+      $size = 's';
+      $block['subject'] = t('Flickr Photosets');
+      $block['content'] = _flickr_block_photosets($user_id, $show_n, $size);
       break;
     }
     return $block;
@@ -148,8 +173,18 @@ function _flickr_block_recent($user_id, $show_n, $size) {
   return $output;
 }
 
+function _flickr_block_photosets($user_id, $show_n, $size) {
+  $output = '';
+  $result = flickr_request('flickr.photosets.getList', array('user_id' => $user_id));
+  $to = min($show_n, count($result->children));
+  for ($i = 0; $i < $to; $i++) {
+    $output .= theme('flickr_photoset', $user_id, $result->children[$i], $size);
+  }
+  return $output;
+}
 
 function flickr_test() {
+/*
   $result = flickr_request(
     'flickr.photos.search',
     array(
@@ -158,10 +193,13 @@ function flickr_test() {
       'per_page' => '16'
     )
   );
+*/
+  $result = flickr_request('flickr.photosets.getList', array('user_id' => '26159919@N00'));
 
   $output = '';
-  foreach($result->children as $photo) {
-    $output .= theme('flickr_photo', $photo, 't');
+  foreach((array)$result->children as $photo) {
+//var_dump($result);exit();
+    $output .= theme('flickr_photoset', $photo, 't');
   }
   $output .= "<pre>". print_r($result, true) ."</pre>";
 
@@ -171,18 +209,29 @@ function flickr_test() {
 
 
 function theme_flickr_photo($photo, $size = NULL, $format = NULL) {
-  $img_url = flickr_photo_img($photo, $size, $format);
-  $img = theme('image', $img_url, $photo->attributes['title'], $photo->attributes['title'], array('class' => 'flickr'), FALSE);
-  $photo_url = flickr_photo_page_url($photo->attributes['owner'], $photo->attributes['id']);
+  $attr = $photo->attributes;
+  $img_url = flickr_photo_img($attr['server'], $attr['id'], $attr['secret'], $size, $format);
+  $img = theme('image', $img_url, $attr['title'], $attr['title'], array('class' => 'flickr photo'), FALSE);
+  $photo_url = flickr_photo_page_url($attr['owner'], $attr['id']);
   return "<a href='$photo_url'>$img</a>";
-
 }
 
-function flickr_photo_img($photo, $size = NULL, $format = NULL) {
-  $p = $photo->attributes;
-  return 'http://static.flickr.com/'. $p['server'] .'/'. $p['id'] .'_'. $p['secret'] .($size ? '_' .$size : '') .'.'. ($size == 'o' ? $format : 'jpg');
+function theme_flickr_photoset($owner, $photoset, $size = NULL, $format = NULL) {
+  $attr = $photoset->attributes;
+  $img_url = flickr_photo_img($attr['server'], $attr['primary'], $attr['secret'], $size, $format);
+  $img = theme('image', $img_url, '', '', array('class' => 'flickr photoset'), FALSE);
+  $photo_url = flickr_photoset_page_url($owner, $attr['id']);
+  return "<a href='$photo_url'>$img</a>";
+}
+
+function flickr_photo_img($server, $id, $secret, $size = NULL, $format = NULL) {
+  return "http://static.flickr.com/{$server}/{$id}_{$secret}" .($size ? "_$size." : '.') . ($size == 'o' ? $format : 'jpg');
 }
 
 function flickr_photo_page_url($owner, $id = NULL) {
   return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
+}
+
+function flickr_photoset_page_url($owner, $id = NULL) {
+  return "http://flickr.com/photos/$owner/sets/$id";
 }
