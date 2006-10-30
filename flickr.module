@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.2 2006/09/18 17:59:52 drewish Exp $
+// $Id: flickr.module,v 1.3 2006/10/30 22:31:45 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -167,7 +167,7 @@ function _flickr_block_recent($user_id, $show_n, $size) {
     )
   );
   $output = '';
-  foreach((array)$result->children as $photo) {
+  foreach((array)$result['photos']['photo'] as $photo) {
     $output .= theme('flickr_photo', $photo, $size);
   }
   return $output;
@@ -176,9 +176,9 @@ function _flickr_block_recent($user_id, $show_n, $size) {
 function _flickr_block_photosets($user_id, $show_n, $size) {
   $output = '';
   $result = flickr_request('flickr.photosets.getList', array('user_id' => $user_id));
-  $to = min($show_n, count($result->children));
+  $to = min($show_n, count($result['photosets']['photoset']));
   for ($i = 0; $i < $to; $i++) {
-    $output .= theme('flickr_photoset', $user_id, $result->children[$i], $size);
+    $output .= theme('flickr_photoset', $user_id, $result['photosets']['photoset'][$i], $size);
   }
   return $output;
 }
@@ -209,18 +209,16 @@ function flickr_test() {
 
 
 function theme_flickr_photo($photo, $size = NULL, $format = NULL) {
-  $attr = $photo->attributes;
-  $img_url = flickr_photo_img($attr['server'], $attr['id'], $attr['secret'], $size, $format);
-  $img = theme('image', $img_url, $attr['title'], $attr['title'], array('class' => 'flickr photo'), FALSE);
-  $photo_url = flickr_photo_page_url($attr['owner'], $attr['id']);
+  $img_url = flickr_photo_img($photo['server'], $photo['id'], $photo['secret'], $size, $format);
+  $img = theme('image', $img_url, $photo['title'], $photo['title'], array('class' => 'flickr photo'), FALSE);
+  $photo_url = flickr_photo_page_url($photo['owner'], $photo['id']);
   return "<a href='$photo_url'>$img</a>";
 }
 
 function theme_flickr_photoset($owner, $photoset, $size = NULL, $format = NULL) {
-  $attr = $photoset->attributes;
-  $img_url = flickr_photo_img($attr['server'], $attr['primary'], $attr['secret'], $size, $format);
+  $img_url = flickr_photo_img($photoset['server'], $photoset['primary'], $photoset['secret'], $size, $format);
   $img = theme('image', $img_url, '', '', array('class' => 'flickr photoset'), FALSE);
-  $photo_url = flickr_photoset_page_url($owner, $attr['id']);
+  $photo_url = flickr_photoset_page_url($owner, $photoset['id']);
   return "<a href='$photo_url'>$img</a>";
 }
 
