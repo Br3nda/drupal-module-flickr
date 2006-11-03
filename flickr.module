@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.5 2006/11/03 02:06:25 drewish Exp $
+// $Id: flickr.module,v 1.6 2006/11/03 02:11:38 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -11,7 +11,6 @@ function flickr_help($section) {
   switch ($section) {
     case 'admin/settings/flickr':
      return t("You will need a Flickr API key to use this module. You can apply for one at <a href='%link'>%link</a>", array('%link' => url('http://www.flickr.com/services/api/keys/apply/')));
-    case 'admin/modules#description':
     case 'admin/help#flickr':
       return t('The flickr module uses XML-RPC to connect to Flickr\'s API and retreive photo information.');
   }
@@ -232,10 +231,7 @@ function _flickr_block_random($user_id, $show_n, $size) {
     $request['page'] = rand(1, $page_count);
     $result = flickr_request('flickr.photos.search', $request);
     // then select a random photo
-var_dump(count($result['photos']['photo']));
     $photo = rand(0, count($result['photos']['photo']));
-var_dump($photo);
-var_dump($result['photos']['photo'][$photo]);
     $output .= theme('flickr_photo', $result['photos']['photo'][$photo], $size);
   }
 
