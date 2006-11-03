@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.3.2.3 2006/11/03 02:09:41 drewish Exp $
+// $Id: flickr.module,v 1.3.2.4 2006/11/03 02:37:26 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -44,7 +44,6 @@ function flickr_menu($may_cache) {
       'access' => TRUE,
       'type' => MENU_CALLBACK,
       'callback' => 'flickr_auth_callback');
-
   }
 
   return $items;
@@ -96,14 +95,17 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   else if ($op == 'configure') {
     $form = array();
     $count_options = array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30');
+    $size_options = array('s' => t('small square 75x75'), 't' => t('thumbnail, 100 on longest side'), 'm' => t('small, 240 on longest side'), '-' => t('medium, 500 on longest side'));
+
+    $form["flickr_block_{$delta}_user_id"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flickr User Id'),
+      '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
+      '#description' => t('The user id of a Flickr user.'),
+    );
+
     switch ($delta) {
     case 0:
-      $form['flickr_block_0_user_id'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get('flickr_block_0_user_id', ''),
-        '#description' => t('The user id of a Flickr user.'),
-      );
       $form['flickr_block_0_show_n'] = array(
         '#type' => 'select',
         '#options' => $count_options,
@@ -113,12 +115,6 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       );
       break;
     case 1:
-      $form['flickr_block_1_user_id'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get('flickr_block_1_user_id', ''),
-        '#description' => t('The user id of a Flickr user.'),
-      );
       $form['flickr_block_1_show_n'] = array(
         '#type' => 'select',
         '#options' => $count_options,
@@ -128,12 +124,6 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       );
       break;
     case 2:
-      $form['flickr_block_2_user_id'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get('flickr_block_2_user_id', ''),
-        '#description' => t('The user id of a Flickr user.'),
-      );
       $form['flickr_block_2_show_n'] = array(
         '#type' => 'select',
         '#options' => $count_options,
@@ -143,22 +133,23 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       );
       break;
     }
+    $form["flickr_block_{$delta}_size"] = array(
+      '#type' => 'select',
+      '#options' => $size_options,
+      '#title' => t('Size of photos'),
+      '#default_value' => variable_get("flickr_block_{$delta}_size", 's'),
+      '#description' => t("Select the size of photos you'd like to display in the block.")
+    );
     return $form;
   }
   else if ($op == 'save') {
     switch($delta) {
       case 0:
-        variable_set('flickr_block_0_user_id', $edit['flickr_block_0_user_id']);
-        variable_set('flickr_block_0_show_n', $edit['flickr_block_0_show_n']);
-        break;
       case 1:
-        variable_set('flickr_block_1_user_id', $edit['flickr_block_1_user_id']);
-        variable_set('flickr_block_1_show_n', $edit['flickr_block_1_show_n']);
-        break;
       case 2:
-        variable_set('flickr_block_2_user_id', $edit['flickr_block_2_user_id']);
-        variable_set('flickr_block_2_show_n', $edit['flickr_block_2_show_n']);
-        break;
+        variable_set("flickr_block_{$delta}_user_id", $edit["flickr_block_{$delta}_user_id"]);
+        variable_set("flickr_block_{$delta}_show_n", $edit["flickr_block_{$delta}_show_n"]);
+        variable_set("flickr_block_{$delta}_size", $edit["flickr_block_{$delta}_size"]);
     }
   }
   else if ($op == 'view') {
@@ -166,21 +157,21 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     case 0:
       $user_id = variable_get('flickr_block_0_user_id', '');
       $show_n = variable_get('flickr_block_0_show_n', 5);
-      $size = 's';
+      $size = variable_get('flickr_block_0_size', 's');
       $block['subject'] = t('Recent Flickr');
       $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
       break;
     case 1:
       $user_id = variable_get('flickr_block_1_user_id', '');
       $show_n = variable_get('flickr_block_1_show_n', 5);
-      $size = 's';
+      $size = variable_get('flickr_block_1_size', 's');
       $block['subject'] = t('Flickr Photosets');
       $block['content'] = _flickr_block_photosets($user_id, $show_n, $size);
       break;
     case 2:
       $user_id = variable_get('flickr_block_2_user_id', '');
       $show_n = variable_get('flickr_block_2_show_n', 5);
-      $size = 's';
+      $size = variable_get('flickr_block_2_size', 's');
       $block['subject'] = t('Flickr Random');
       $block['content'] = _flickr_block_random($user_id, $show_n, $size);
       break;
@@ -276,16 +267,4 @@ function theme_flickr_photoset($owner, $photoset, $size = NULL, $format = NULL) 
   $img = theme('image', $img_url, '', '', array('class' => 'flickr photoset'), FALSE);
   $photo_url = flickr_photoset_page_url($owner, $photoset['id']);
   return "<a href='$photo_url'>$img</a>";
-}
-
-function flickr_photo_img($server, $id, $secret, $size = NULL, $format = NULL) {
-  return "http://static.flickr.com/{$server}/{$id}_{$secret}" .($size ? "_$size." : '.') . ($size == 'o' ? $format : 'jpg');
-}
-
-function flickr_photo_page_url($owner, $id = NULL) {
-  return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
-}
-
-function flickr_photoset_page_url($owner, $id = NULL) {
-  return "http://flickr.com/photos/$owner/sets/$id";
 }
