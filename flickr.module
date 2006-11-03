@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.4 2006/10/31 00:30:16 drewish Exp $
+// $Id: flickr.module,v 1.5 2006/11/03 02:06:25 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -11,6 +11,7 @@ function flickr_help($section) {
   switch ($section) {
     case 'admin/settings/flickr':
      return t("You will need a Flickr API key to use this module. You can apply for one at <a href='%link'>%link</a>", array('%link' => url('http://www.flickr.com/services/api/keys/apply/')));
+    case 'admin/modules#description':
     case 'admin/help#flickr':
       return t('The flickr module uses XML-RPC to connect to Flickr\'s API and retreive photo information.');
   }
@@ -33,9 +34,9 @@ function flickr_menu($may_cache) {
 
 
     $items[] = array(
-      'path' => 'flickr', 'title' => t('flickr test'),
+      'path' => 'flickr/test', 'title' => t('flickr test'),
       'access' => user_access('access content'),
-      'type' => MENU_NORMAL_ITEM,
+      'type' => MENU_CALLBACK,
       'callback' => 'flickr_test');
 
     $items[] = array(
@@ -89,6 +90,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     $blocks[0]['info'] = t('Flickr recent photos by user');
     $blocks[1]['info'] = t('Flickr photosets by user');
+    $blocks[2]['info'] = t('Flickr random photos by user');
     return $blocks;
   }
   else if ($op == 'configure') {
@@ -102,11 +104,11 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
         '#default_value' => variable_get('flickr_block_0_user_id', ''),
         '#description' => t('The user id of a Flickr user.'),
       );
-      $form['flickr_block_0_show_last'] = array(
+      $form['flickr_block_0_show_n'] = array(
         '#type' => 'select',
         '#options' => $count_options,
         '#title' => t('Show the last <em>n</em> photos'),
-        '#default_value' => variable_get('flickr_block_0_show_last', 5),
+        '#default_value' => variable_get('flickr_block_0_show_n', 5),
         '#description' => t("The block will show this many of the user's most recent photos.")
       );
       break;
@@ -117,11 +119,26 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
         '#default_value' => variable_get('flickr_block_1_user_id', ''),
         '#description' => t('The user id of a Flickr user.'),
       );
-      $form['flickr_block_1_show_last'] = array(
+      $form['flickr_block_1_show_n'] = array(
         '#type' => 'select',
         '#options' => $count_options,
         '#title' => t('Show the last <em>n</em> photosets'),
-        '#default_value' => variable_get('flickr_block_1_show_last', 5),
+        '#default_value' => variable_get('flickr_block_1_show_n', 5),
+        '#description' => t("The block will show this many of the user's photosets.")
+      );
+      break;
+    case 2:
+      $form['flickr_block_2_user_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Flickr User Id'),
+        '#default_value' => variable_get('flickr_block_2_user_id', ''),
+        '#description' => t('The user id of a Flickr user.'),
+      );
+      $form['flickr_block_2_show_n'] = array(
+        '#type' => 'select',
+        '#options' => $count_options,
+        '#title' => t('Show the last <em>n</em> photosets'),
+        '#default_value' => variable_get('flickr_block_2_show_n', 5),
         '#description' => t("The block will show this many of the user's photosets.")
       );
       break;
@@ -132,11 +149,15 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     switch($delta) {
       case 0:
         variable_set('flickr_block_0_user_id', $edit['flickr_block_0_user_id']);
-        variable_set('flickr_block_0_show_last', $edit['flickr_block_0_show_last']);
+        variable_set('flickr_block_0_show_n', $edit['flickr_block_0_show_n']);
         break;
       case 1:
         variable_set('flickr_block_1_user_id', $edit['flickr_block_1_user_id']);
-        variable_set('flickr_block_1_show_last', $edit['flickr_block_1_show_last']);
+        variable_set('flickr_block_1_show_n', $edit['flickr_block_1_show_n']);
+        break;
+      case 2:
+        variable_set('flickr_block_2_user_id', $edit['flickr_block_2_user_id']);
+        variable_set('flickr_block_2_show_n', $edit['flickr_block_2_show_n']);
         break;
     }
   }
@@ -144,17 +165,24 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     switch ($delta) {
     case 0:
       $user_id = variable_get('flickr_block_0_user_id', '');
-      $show_n = variable_get('flickr_block_0_show_last', 5);
+      $show_n = variable_get('flickr_block_0_show_n', 5);
       $size = 's';
       $block['subject'] = t('Recent Flickr');
       $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
       break;
     case 1:
       $user_id = variable_get('flickr_block_1_user_id', '');
-      $show_n = variable_get('flickr_block_1_show_last', 5);
+      $show_n = variable_get('flickr_block_1_show_n', 5);
       $size = 's';
       $block['subject'] = t('Flickr Photosets');
       $block['content'] = _flickr_block_photosets($user_id, $show_n, $size);
+      break;
+    case 2:
+      $user_id = variable_get('flickr_block_2_user_id', '');
+      $show_n = variable_get('flickr_block_2_show_n', 5);
+      $size = 's';
+      $block['subject'] = t('Flickr Random');
+      $block['content'] = _flickr_block_random($user_id, $show_n, $size);
       break;
     }
     return $block;
@@ -183,6 +211,34 @@ function _flickr_block_photosets($user_id, $show_n, $size) {
   for ($i = 0; $i < $to; $i++) {
     $output .= theme('flickr_photoset', $user_id, $result['photosets']['photoset'][$i], $size);
   }
+  return $output;
+}
+
+function _flickr_block_random($user_id, $show_n, $size) {
+  $request = array(
+    'user_id' => $user_id,
+    'per_page' => 500,
+    'page' => 1,
+  );
+  $result = flickr_request('flickr.photos.search', $request);
+  $page_count = $result['photos']['pages'];
+
+  // we shouldn't try to return more than the total number of photos
+  $to = min($show_n, $result['photos']['total']);
+  $output = '';
+  for ($i = 0; $i < $to; $i++) {
+    sleep(0.5);
+    // request a random page
+    $request['page'] = rand(1, $page_count);
+    $result = flickr_request('flickr.photos.search', $request);
+    // then select a random photo
+var_dump(count($result['photos']['photo']));
+    $photo = rand(0, count($result['photos']['photo']));
+var_dump($photo);
+var_dump($result['photos']['photo'][$photo]);
+    $output .= theme('flickr_photo', $result['photos']['photo'][$photo], $size);
+  }
+
   return $output;
 }
 
