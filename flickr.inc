@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.3.2.2 2006/11/03 02:37:26 drewish Exp $
+// $Id: flickr.inc,v 1.3.2.3 2006/11/13 17:10:05 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -63,9 +63,11 @@ function flickr_photo_img($server, $id, $secret, $size = NULL, $format = NULL) {
 }
 
 function flickr_photo_page_url($owner, $id = NULL) {
+  $owner = is_array($owner) ? $owner['nsid']: $owner;
   return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
 }
 
 function flickr_photoset_page_url($owner, $id = NULL) {
+  $owner = is_array($owner) ? $owner['nsid']: $owner;
   return "http://flickr.com/photos/$owner/sets/$id";
 }
