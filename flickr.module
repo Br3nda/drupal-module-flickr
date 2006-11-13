@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.3.2.5 2006/11/13 17:10:05 drewish Exp $
+// $Id: flickr.module,v 1.3.2.6 2006/11/13 17:44:29 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -94,8 +94,12 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   }
   else if ($op == 'configure') {
     $form = array();
+
     $count_options = array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30');
-    $size_options = array('s' => t('small square 75x75'), 't' => t('thumbnail, 100 on longest side'), 'm' => t('small, 240 on longest side'), '-' => t('medium, 500 on longest side'));
+    // remove the large and original sizes
+    $size_options = flickr_photo_sizes();
+    unset($size_options['b']);
+    unset($size_options['o']);
 
     $form["flickr_block_{$delta}_user_id"] = array(
       '#type' => 'textfield',
@@ -184,8 +188,16 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 function flickr_filter_tips($delta, $format, $long = FALSE) {
   switch ($delta) {
     case 0:
-      return t('Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m].');
-      break;
+      $output = t('Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m]. ');
+      if ($long) {
+        $output .= t('The size parameter can be one of the following:');
+        $items = array();
+        foreach (flickr_photo_sizes() as $key => $text) {
+          $items[] = "$key - $text";
+        }
+        $output .= theme('item_list', $items);
+      }
+      return $output;
   }
 }
 
@@ -362,3 +374,14 @@ function theme_flickr_photoset($ps, $owner, $size = NULL, $format = NULL) {
   $photo_url = flickr_photoset_page_url($owner, $ps['id']);
   return "<a href='$photo_url'>$img</a>";
 }
+
+function flickr_photo_sizes() {
+  return array(
+    's' => t('small square 75x75'),
+    't' => t('thumbnail, 100 on longest side'),
+    'm' => t('small, 240 on longest side'),
+    '-' => t('medium, 500 on longest side'),
+    'b' => t('large, 1024 on longest side'),
+    'o' => t('original image')
+  );
+};
