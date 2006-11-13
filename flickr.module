@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.7 2006/11/03 02:38:47 drewish Exp $
+// $Id: flickr.module,v 1.8 2006/11/13 05:09:11 drewish Exp $
 
 include(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -257,14 +257,14 @@ function flickr_test() {
 
 function theme_flickr_photo($photo, $size = NULL, $format = NULL) {
   $img_url = flickr_photo_img($photo['server'], $photo['id'], $photo['secret'], $size, $format);
-  $img = theme('image', $img_url, $photo['title']['_content'], $photo['title']['_content'], array('class' => 'flickr photo'), FALSE);
+  $img = theme('image', $img_url, $photo['title'], $photo['title'], array('class' => 'flickr photo'), FALSE);
   $photo_url = flickr_photo_page_url($photo['owner'], $photo['id']);
   return "<a href='$photo_url'>$img</a>";
 }
 
 function theme_flickr_photoset($owner, $photoset, $size = NULL, $format = NULL) {
   $img_url = flickr_photo_img($photoset['server'], $photoset['primary'], $photoset['secret'], $size, $format);
-  $img = theme('image', $img_url, '', '', array('class' => 'flickr photoset'), FALSE);
+  $img = theme('image', $img_url, $photoset['title']['_content'], $photoset['title']['_content'], array('class' => 'flickr photoset'), FALSE);
   $photo_url = flickr_photoset_page_url($owner, $photoset['id']);
   return "<a href='$photo_url'>$img</a>";
 }
