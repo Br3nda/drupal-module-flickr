@@ -1,8 +1,9 @@
 <?php
 
-// $Id: flickr.module,v 1.10 2006/11/13 17:42:47 drewish Exp $
+// $Id: flickr.module,v 1.11 2006/12/02 23:39:09 drewish Exp $
 
-include(drupal_get_path('module', 'flickr') .'/flickr.inc');
+require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+require_once(drupal_get_path('module', 'flickr') .'/filter.inc');
 
 /**
  * Implementation of hook_help().
@@ -24,7 +25,7 @@ function flickr_menu($may_cache) {
 
   if ($may_cache) {
     $items[] = array(
-      'path' => 'admin/settings/flickr', 'title' => t('flickr'),
+      'path' => 'admin/settings/flickr', 'title' => t('Flickr'),
       'callback' => 'drupal_get_form',
       'callback arguments' => array('flickr_admin_settings'),
       'access' => user_access('administer site configuration'),
@@ -33,10 +34,18 @@ function flickr_menu($may_cache) {
 
 
     $items[] = array(
-      'path' => 'flickr/test', 'title' => t('flickr test'),
+      'path' => 'flickr', 'title' => t('Flickr'),
       'access' => user_access('access content'),
       'type' => MENU_CALLBACK,
-      'callback' => 'flickr_test');
+      'callback' => 'flickr_recent');
+
+    $items[] = array(
+      'path' => 'flickr/photosets', 'title' => t('Flickr photosets'),
+      'access' => user_access('access content'),
+      'type' => MENU_NORMAL_ITEM,
+      'callback' => 'flickr_photosets',
+    );
+
 
     $items[] = array(
       'path' => 'flickr/auth',
@@ -65,6 +74,12 @@ function flickr_admin_settings() {
     '#title' => t('API Shared Secret'),
     '#default_value' => variable_get('flickr_api_secret', ''),
     '#description' => t("API key's secret from Flickr."),
+  );
+  $form['flickr_default_userid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default Flickr User Id'),
+    '#default_value' => variable_get('flickr_default_userid', ''),
+    '#description' => t("An, optional, default Flickr User."),
   );
   return system_settings_form($form);
 }
@@ -105,7 +120,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       '#type' => 'textfield',
       '#title' => t('Flickr User Id'),
       '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
-      '#description' => t('The user id of a Flickr user.'),
+      '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used."),
     );
 
     switch ($delta) {
@@ -157,23 +172,24 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     }
   }
   else if ($op == 'view') {
+    $default_userid = variable_get('flickr_default_userid', '');
     switch ($delta) {
     case 0:
-      $user_id = variable_get('flickr_block_0_user_id', '');
+      $user_id = variable_get('flickr_block_0_user_id', $default_userid);
       $show_n = variable_get('flickr_block_0_show_n', 5);
       $size = variable_get('flickr_block_0_size', 's');
       $block['subject'] = t('Recent Flickr');
       $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
       break;
     case 1:
-      $user_id = variable_get('flickr_block_1_user_id', '');
+      $user_id = variable_get('flickr_block_1_user_id', $default_userid);
       $show_n = variable_get('flickr_block_1_show_n', 5);
       $size = variable_get('flickr_block_1_size', 's');
       $block['subject'] = t('Flickr Photosets');
       $block['content'] = _flickr_block_photosets($user_id, $show_n, $size);
       break;
     case 2:
-      $user_id = variable_get('flickr_block_2_user_id', '');
+      $user_id = variable_get('flickr_block_2_user_id', $default_userid);
       $show_n = variable_get('flickr_block_2_show_n', 5);
       $size = variable_get('flickr_block_2_size', 's');
       $block['subject'] = t('Flickr Random');
@@ -182,107 +198,6 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     }
     return $block;
   }
-}
-
-
-function flickr_filter_tips($delta, $format, $long = FALSE) {
-  switch ($delta) {
-    case 0:
-      $output = t('Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m]. ');
-      if ($long) {
-        $output .= t('The size parameter can be one of the following:');
-        $items = array();
-        foreach (flickr_photo_sizes() as $key => $text) {
-          $items[] = "$key - $text";
-        }
-        $output .= theme('item_list', $items);
-      }
-      return $output;
-  }
-}
-
-function flickr_filter($op, $delta = 0, $format = -1, $text = '') {
-  if ($op == 'list') {
-    return array(0 => t('flickr inline'));
-  }
-
-  switch ($delta) {
-    case 0:
-      switch ($op) {
-        case 'description':
-          return t('Insert photos from Flickr.');
-
-        case 'no cache':
-          // TODO: only return true when testing the filter
-          // return TRUE;
-          return FALSE;
-
-        case 'prepare':
-          return $text;
-
-        case 'process':
-          $text = preg_replace_callback('/\[flickr-photo:(.+)\]/', 'flickr_filter_callback_photo', $text);
-          $text = preg_replace_callback('/\[flickr-photoset:(.+)\]/', 'flickr_filter_callback_photoset', $text);
-          return $text;
-      }
-      break;
-  }
-}
-
-/**
- * Parse parameters to the fiter from a format like:
- *   id=26159919@N00, size=m,show = 9
- * into an associative array.
- */
-function flickr_filter_split_config($string) {
-  $config = array();
-  // put each setting on its own line
-  $string = str_replace(',', "\n", $string);
-  // break them up around commas
-  preg_match_all('/([a-zA-Z]+)=([@0-9a-zA-Z]+)/', $string, $parts, PREG_SET_ORDER);
-  foreach($parts as $part) {
-    // normalize to lower case and remove extra spaces
-    $config[strtolower(trim($part[1]))] = trim($part[2]);
-  }
-  return $config;
-}
-
-/**
- * Filter callback for a photo.
- */
-function flickr_filter_callback_photo($matches) {
-  $config = flickr_filter_split_config($matches[1]);
-
-  $output = '';
-  if (isset($config['id'])) {
-    $result = flickr_request(
-      'flickr.photos.getInfo',
-      array(
-        'photo_id' => $config['id'],
-      )
-    );
-    $output = theme('flickr_photo', $result['photo'], $config['size']);
-  }
-  return $output ;
-}
-
-/**
- * Filter callback for a photoset.
- */
-function flickr_filter_callback_photoset($matches) {
-  $config = flickr_filter_split_config($matches[1]);
-
-  $output = '';
-  if (isset($config['id'])) {
-    $result = flickr_request(
-      'flickr.photosets.getInfo',
-      array(
-        'photoset_id' => $config['id'],
-      )
-    );
-    $output = theme('flickr_photoset', $result['photoset'], $result['photoset']['owner'], $config['size']);
-  }
-  return $output ;
 }
 
 
@@ -336,25 +251,37 @@ function _flickr_block_random($user_id, $show_n, $size) {
   return $output;
 }
 
-function flickr_test() {
-/*
+function flickr_recent() {
+  theme_add_style(drupal_get_path('module', 'flickr') .'/flickr.css');
+
   $result = flickr_request(
     'flickr.photos.search',
     array(
-      'user_id' => variable_get('flickr_uid','26159919@N00'),
-      'text' => 'etta',
-      'per_page' => '16'
+      'user_id' => variable_get('flickr_default_userid', ''),
+      'per_page' => 20,
     )
   );
-*/
-  $result = flickr_request('flickr.photosets.getList', array('user_id' => '26159919@N00'));
-
-  $output = '';
-  foreach((array)$result->children as $photo) {
-//var_dump($result);exit();
-    $output .= theme('flickr_photoset', $photo, 't');
+  $output = "<div class='fickr-photoset'>\n";
+  foreach((array)$result['photos']['photo'] as $photo) {
+    $output .= theme('flickr_photo_box', $photo, 'm');
   }
-  $output .= "<pre>". print_r($result, true) ."</pre>";
+  $output .= '</div>';
+  return $output;
+}
+
+
+function flickr_photosets($flickr_userid = NULL) {
+  theme_add_style(drupal_get_path('module', 'flickr') .'/flickr.css');
+  if (!isset($flickr_userid)) {
+    $flickr_userid = variable_get('flickr_default_userid', '');
+  }
+
+  $output = "<div class='fickr-photosets'>\n";
+  $result = flickr_request('flickr.photosets.getList', array('user_id' => $flickr_userid));
+  foreach((array)$result['photosets']['photoset'] as $photoset) {
+    $output .= theme('flickr_photoset_box', $photoset, $flickr_userid, 's');
+  }
+  $output .= '</div>';
 
   return $output;
 }
@@ -363,17 +290,52 @@ function flickr_test() {
 function theme_flickr_photo($p, $size = NULL, $format = NULL) {
   $img_url = flickr_photo_img($p['server'], $p['id'], $p['secret'], $size, $format);
   $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
-  $img = theme('image', $img_url, $title, $title, array('class' => 'flickr photo'), FALSE);
+  $img = theme('image', $img_url, $title, $title, array('class' => 'flickr-photo-img'), FALSE);
   $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
-  return "<a href='$photo_url'>$img</a>";
+  return l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE);
+}
+
+function theme_flickr_photo_box($p, $size = NULL, $format = NULL) {
+  $img_url = flickr_photo_img($p['server'], $p['id'], $p['secret'], $size, $format);
+  $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
+  $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
+
+  $output .= "<div class='flickr-photo-box'>\n";
+  $output .= "<a href='$photo_url'>";
+  $output .= theme('image', $img_url, $title, $title, array('class' => 'flickr-photo-img'), FALSE);
+  $output .= "</a>";
+  $output .= "<a href='$photo_url'>";
+  $output .= '<div class="flickr-photo-title">'. $title ."</div>\n";
+  $output .= "</a>";
+  $output .= "</div>\n";
+
+  return $output;
 }
 
 function theme_flickr_photoset($ps, $owner, $size = NULL, $format = NULL) {
   $img_url = flickr_photo_img($ps['server'], $ps['primary'], $ps['secret'], $size, $format);
   $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
-  $img = theme('image', $img_url, $title, $title, array('class' => 'flickr photoset'), FALSE);
+  $img = theme('image', $img_url, $title, $title, array('class' => 'flickr-photoset-img'), FALSE);
   $photo_url = flickr_photoset_page_url($owner, $ps['id']);
-  return "<a href='$photo_url'>$img</a>";
+  return l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE);
+}
+
+function theme_flickr_photoset_box($ps, $owner, $size = NULL, $format = NULL) {
+  $img_url = flickr_photo_img($ps['server'], $ps['primary'], $ps['secret'], $size, $format);
+  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
+  $photo_url = flickr_photoset_page_url($owner, $ps['id']);
+
+  $output .= "<div class='flickr-photoset-box'>\n";
+  $output .= "<a href='$photo_url'>";
+  $output .= theme('image', $img_url, $title, $title, array('class' => 'flickr-photoset-img'), FALSE);
+  $output .= "</a>";
+  $output .= "<a href='$photo_url'>";
+  $output .= '<div class="flickr-photoset-title">'. $title ."</div>\n";
+  $output .= "</a>";
+  $output .= '<div class="flickr-photoset-count">'. format_plural($ps['photos'], '%count photo', '%count photos') ."</div>\n";
+  $output .= "</div>\n";
+
+  return $output;
 }
 
 function flickr_photo_sizes() {
