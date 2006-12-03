@@ -1,3 +1,4 @@
-; $Id: flickr.info,v 1.1 2006/09/18 01:41:18 drewish Exp $
 name = Flickr
-description = Allows you to display photos from Flickr on your site.
+description = Flickr and Drupal integration.
+version = 1.0
+package = Flickr

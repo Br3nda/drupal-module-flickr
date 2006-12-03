@@ -1,0 +1,5 @@
+name = Flickr Fliter
+description = Flickr Filter for inserting photos into content
+version = 1.0
+dependencies = flickr
+package = Flickr
