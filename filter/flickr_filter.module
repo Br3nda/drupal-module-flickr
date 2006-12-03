@@ -1,13 +1,8 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.1 2006/12/03 00:24:42 wnorrix Exp $
+// $Id: flickr_filter.module,v 1.1 2006/12/03 22:32:47 drewish Exp $
 
-function flickr_fliter_help($section) {
-  switch ($section) {
-    case 'admin/modules#description':
-      return t('Flickr Filter for inserting photos into content');
-  }
-}
+require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
 function flickr_filter_tips($delta, $format, $long = FALSE) {
   switch ($delta) {
@@ -102,5 +97,3 @@ function flickr_filter_callback_photoset($matches) {
   }
   return $output ;
 }
-
-?>

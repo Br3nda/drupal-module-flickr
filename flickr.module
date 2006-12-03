@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.14 2006/12/03 01:55:17 wnorrix Exp $
+// $Id: flickr.module,v 1.15 2006/12/03 22:32:47 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -349,23 +349,24 @@ function flickr_photo_sizes() {
   );
 };
 
-/*
-  Implimentation of the hook_user()  
-  Add an extra field for the user to enter his flickr nsid.
-*/
-
+/**
+ * Implimentation of the hook_user()  
+ * Add an extra field for the user to enter his flickr nsid.
+ */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'form' && $category == 'account') {
     $form['flickr'] = array(
       '#type' => 'fieldset',
       '#title' => t('Flickr settings'),
       '#collapsible' => FALSE,
-      '#weight' => 4);
+      '#weight' => 4,
+    );
     $form['flickr']['nsid'] = array(
       '#type' => 'textfield',
       '#title' => t('Flickr NSID'),
       '#default_value' => $edit['userid'],
-      '#description' => t('Please enter your Flickr NSID'));
+      '#description' => t('Please enter your Flickr NSID.'),
+    );
     return $form;
   }
 }
