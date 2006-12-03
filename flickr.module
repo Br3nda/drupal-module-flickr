@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.13 2006/12/03 01:29:47 wnorrix Exp $
+// $Id: flickr.module,v 1.14 2006/12/03 01:55:17 wnorrix Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -251,7 +251,7 @@ function _flickr_block_random($user_id, $show_n, $size) {
 }
 
 function flickr_recent() {
-  theme_add_style(drupal_get_path('module', 'flickr') .'/flickr.css');
+  drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
 
   $result = flickr_request(
     'flickr.photos.search',
