@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.12 2006/12/03 00:24:42 wnorrix Exp $
+// $Id: flickr.module,v 1.13 2006/12/03 01:29:47 wnorrix Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -270,7 +270,8 @@ function flickr_recent() {
 
 
 function flickr_photosets($flickr_userid = NULL) {
-  theme_add_style(drupal_get_path('module', 'flickr') .'/flickr.css');
+  drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
+  
   if (!isset($flickr_userid)) {
     $flickr_userid = variable_get('flickr_default_userid', '');
   }
@@ -347,3 +348,24 @@ function flickr_photo_sizes() {
     'o' => t('original image')
   );
 };
+
+/*
+  Implimentation of the hook_user()  
+  Add an extra field for the user to enter his flickr nsid.
+*/
+
+function flickr_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'form' && $category == 'account') {
+    $form['flickr'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Flickr settings'),
+      '#collapsible' => FALSE,
+      '#weight' => 4);
+    $form['flickr']['nsid'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flickr NSID'),
+      '#default_value' => $edit['userid'],
+      '#description' => t('Please enter your Flickr NSID'));
+    return $form;
+  }
+}
