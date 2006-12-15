@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.15 2006/12/03 22:32:47 drewish Exp $
+// $Id: flickr.module,v 1.16 2006/12/15 22:04:11 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -271,7 +271,7 @@ function flickr_recent() {
 
 function flickr_photosets($flickr_userid = NULL) {
   drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
-  
+
   if (!isset($flickr_userid)) {
     $flickr_userid = variable_get('flickr_default_userid', '');
   }
@@ -332,7 +332,7 @@ function theme_flickr_photoset_box($ps, $owner, $size = NULL, $format = NULL) {
   $output .= "<a href='$photo_url'>";
   $output .= '<div class="flickr-photoset-title">'. $title ."</div>\n";
   $output .= "</a>";
-  $output .= '<div class="flickr-photoset-count">'. format_plural($ps['photos'], '%count photo', '%count photos') ."</div>\n";
+  $output .= '<div class="flickr-photoset-count">'. format_plural($ps['photos'], '@count photo', '@count photos') ."</div>\n";
   $output .= "</div>\n";
 
   return $output;
@@ -350,7 +350,7 @@ function flickr_photo_sizes() {
 };
 
 /**
- * Implimentation of the hook_user()  
+ * Implimentation of the hook_user()
  * Add an extra field for the user to enter his flickr nsid.
  */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
