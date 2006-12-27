@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.9 2006/12/27 02:50:56 drewish Exp $
+// $Id: flickr.inc,v 1.10 2006/12/27 03:04:43 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -87,7 +87,7 @@ function flickr_request($method, $args, $cacheable = TRUE) {
   return FALSE;
 }
 
-function flickr_img($photo, $size) {
+function flickr_img($photo, $size = '-') {
   $sizes = flickr_photo_sizes();
   if (!isset($sizes[$size])) {
     return;
@@ -138,7 +138,7 @@ function flickr_photo_img($photo, $size = NULL, $format = NULL) {
   // photoset's use primary instead of id to specify the image.
   $id = isset($photo['primary']) ? $photo['primary'] : $photo['id'];
   $secret = $photo['secret'];
-//var_dump($photo); exit();
+  
   return "http://farm{$farm}.static.flickr.com/{$server}/{$id}_{$secret}" .($size ? "_$size." : '.') . ($size == 'o' ? $format : 'jpg');
 }
 
