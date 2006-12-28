@@ -1,0 +1,6 @@
+; $Id: flickr_block.info,v 1.1 2006/12/28 10:46:26 wnorrix Exp $
+name = Flickr Block
+description = Flickr Block for inserting photos into content.
+version = 1.0
+dependencies = flickr
+package = Flickr
