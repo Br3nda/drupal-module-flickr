@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.10 2006/12/27 03:04:43 drewish Exp $
+// $Id: flickr.inc,v 1.11 2007/01/01 22:09:39 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -123,7 +123,7 @@ function flickr_img($photo, $size = '-') {
       }
     }
     else {
-      $img_url = flickr_photo_img($p, $size, $format);
+      $img_url = flickr_photo_img($photo, $size, $format);
     }
   }
   $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
