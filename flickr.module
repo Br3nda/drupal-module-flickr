@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.21 2006/12/28 10:46:26 wnorrix Exp $
+// $Id: flickr.module,v 1.22 2007/01/01 23:00:48 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -109,17 +109,22 @@ function flickr_admin_settings_validate($form_id, $form) {
 }
 
 function flickr_admin_settings_submit($form_id, $form) {
-  // clean up the data
+  // clean up the data ...
   $form['flickr_api_key'] = trim($form['flickr_api_key']);
   $form['flickr_api_secret'] = trim($form['flickr_api_secret']);
-  // replace the username with a user id
-  if (preg_match('/^\d+@N\d+$/', $uid) == 0) {
-    $response = flickr_user_find_by_username($form['flickr_default_userid']);
+  $form['flickr_default_userid'] = trim($form['flickr_default_userid']);
+  
+  // ... replace the usernames with a user id ...
+  if (preg_match('/^\d+@N\d+$/', $form['flickr_default_userid']) == 0) {
+    $username = $form['flickr_default_userid'];
+    $response = flickr_user_find_by_username($username);
     if (isset($response['stat']) && $response['stat'] == 'ok') {
+      drupal_set_message(t("The Flickr username %username has been replaced with the corresponding user id %uid.", array('%username' => $form['flickr_default_userid'], '%uid' => $response['user']['id'])));
       $form['flickr_default_userid'] = $response['user']['id'];
     }
   }
-  // and save the settings
+  
+  // ... and save the settings
   system_settings_form_submit($form_id, $form);
 }
 
