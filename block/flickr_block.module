@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.1 2006/12/28 10:46:26 wnorrix Exp $
+// $Id: flickr_block.module,v 1.2 2007/01/02 16:20:17 drewish Exp $
 
 
 /**
@@ -13,7 +13,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     // User base blocks
     $blocks[0]['info'] = t('Flickr recent photos by user');
     $blocks[1]['info'] = t('Flickr photosets by user');
-    $blocks[2]['info'] = t('Flickr randon photos by user');
+    $blocks[2]['info'] = t('Flickr random photos by user');
 
     // Site wide blocks
     $blocks[3]['info'] = t('Flickr recent photos');
@@ -178,15 +178,15 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 
       break;
     }
-    
-    return $block;    
+
+    return $block;
   }
 }
 
 function _flickr_get_userid($id) {
   $result = db_fetch_object(db_query('SELECT data FROM {users} WHERE uid = %d', $id));
   $data = unserialize($result->data);
-  return $data['nsid'];  
+  return $data['nsid'];
 }
 
 function _flickr_block_recent($user_id, $show_n, $size) {
