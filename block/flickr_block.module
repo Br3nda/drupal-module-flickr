@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.2 2007/01/02 16:20:17 drewish Exp $
+// $Id: flickr_block.module,v 1.3 2007/01/02 17:59:11 drewish Exp $
 
 
 /**
@@ -23,72 +23,26 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     return $blocks;
 
   case 'configure':
-
-    $form = array();
-
     $count_options = array(1 => '1', 2 => '2', 3 => '3',  4 => '4', 5 => '5', 6 => '6', 7 => '7',  8 => '8', 9 => '9', 10 => '10', 15 => '15', 20 => '20', 25 => '25', 30 => '30');
     // remove the large and original sizes
     $size_options = flickr_photo_sizes();
     unset($size_options['b']);
     unset($size_options['o']);
 
-    switch ($delta) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-      $form["flickr_block_{$delta}_user_id"] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
-        '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
-      );
-
-      $form["flickr_block_{$delta}_show_n"] = array(
-        '#type' => 'select',
-        '#options' => $count_options,
-        '#title' => t('Show the last <em>n</em> photosets'),
-        '#default_value' => variable_get("flickr_block_{$delta}_show_n", 4),
-        '#description' => t("The block will show this many of the user's photosets.")
-      );
-
-      break;
-    case 4:
-      $form["flickr_block_{$delta}_user_id"] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
-        '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
-      );
-
-      $form["flickr_block_{$delta}_show_n"] = array(
-        '#type' => 'select',
-        '#options' => $count_options,
-        '#title' => t('Show the last <em>n</em> photosets'),
-        '#default_value' => variable_get("flickr_block_{$delta}_show_n", 4),
-        '#description' => t("The block will show this many of the user's photosets.")
-      );
-
-      break;
-    case 5:
-      $form["flickr_block_{$delta}_user_id"] = array(
-        '#type' => 'textfield',
-        '#title' => t('Flickr User Id'),
-        '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
-        '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
-      );
-
-      $form["flickr_block_{$delta}_show_n"] = array(
-        '#type' => 'select',
-        '#options' => $count_options,
-        '#title' => t('Show the last <em>n</em> photosets'),
-        '#default_value' => variable_get("flickr_block_{$delta}_show_n", 4),
-        '#description' => t("The block will show this many of the user's photosets.")
-      );
-
-      break;
-    }
-
+    $form = array();
+    $form["flickr_block_{$delta}_user_id"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flickr User Id'),
+      '#default_value' => variable_get("flickr_block_{$delta}_user_id", ''),
+      '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
+    );
+    $form["flickr_block_{$delta}_show_n"] = array(
+      '#type' => 'select',
+      '#options' => $count_options,
+      '#title' => t('Show the last <em>n</em> photosets'),
+      '#default_value' => variable_get("flickr_block_{$delta}_show_n", 4),
+      '#description' => t("The block will show this many of the user's photos.")
+    );
     $form["flickr_block_{$delta}_size"] = array(
       '#type' => 'select',
       '#options' => $size_options,
@@ -96,6 +50,37 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       '#default_value' => variable_get("flickr_block_{$delta}_size", 's'),
       '#description' => t("Select the size of photos you'd like to display in the block.")
     );
+
+    switch ($delta) {
+    case 0:
+      // user page, recent
+      unset($form["flickr_block_{$delta}_user_id"]);
+      break;
+    case 1:
+      // user page, photosets
+      unset($form["flickr_block_{$delta}_user_id"]);
+      // photoset, not photos
+      $form["flickr_block_{$delta}_show_n"]['#title'] = t('Show the last <em>n</em> photosets');
+      $form["flickr_block_{$delta}_show_n"]['#description'] = t("The block will show this many of the user's photosets.");
+      break;
+    case 2:
+      // user page, random
+      unset($form["flickr_block_{$delta}_user_id"]);
+      break;
+
+    case 3:
+      // sitewide, recent
+      break;
+    case 4:
+      // sitewite photoset, not photos
+      $form["flickr_block_{$delta}_show_n"]['#title'] = t('Show the last <em>n</em> photosets');
+      $form["flickr_block_{$delta}_show_n"]['#description'] = t("The block will show this many of the user's photosets.");
+      break;
+    case 5:
+      // sitewide, random
+      break;
+    }
+
     return $form;
 
   case 'save':
@@ -104,27 +89,21 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     case 1:
     case 2:
     case 3:
-      variable_set("flickr_block_{$delta}_user_id", $edit["flickr_block_{$delta}_user_id"]);
-      variable_set("flickr_block_{$delta}_show_n", $edit["flickr_block_{$delta}_show_n"]);
-      break;
     case 4:
-      variable_set("flickr_block_{$delta}_user_id", $edit["flickr_block_{$delta}_user_id"]);
-      variable_set("flickr_block_{$delta}_show_n", $edit["flickr_block_{$delta}_show_n"]);
-      break;
     case 5:
       variable_set("flickr_block_{$delta}_user_id", $edit["flickr_block_{$delta}_user_id"]);
       variable_set("flickr_block_{$delta}_show_n", $edit["flickr_block_{$delta}_show_n"]);
       break;
     }
-
     break;
+
   case 'view': default:
     // Get the default user id as a fallback
     $default_userid = variable_get('flickr_default_userid', '');
 
     switch ($delta) {
     case 0:
-      $user_id = _flickr_get_userid(arg(1));
+      $user_id = _flickr_block_get_userid(arg(1));
       $show_n = variable_get("flickr_block_{$delta}_show_n", 4);
       $size = variable_get("flickr_block_{$delta}_size", 's');
 
@@ -133,7 +112,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 
       break;
     case 1:
-      $user_id = _flickr_get_userid(arg(1));
+      $user_id = _flickr_block_get_userid(arg(1));
       $show_n = variable_get("flickr_block_{$delta}_show_n", 4);
       $size = variable_get("flickr_block_{$delta}_size", 's');
 
@@ -142,7 +121,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 
       break;
     case 2:
-      $user_id = _flickr_get_userid(arg(1));
+      $user_id = _flickr_block_get_userid(arg(1));
       $show_n = variable_get("flickr_block_{$delta}_show_n", 4);
       $size = variable_get("flickr_block_{$delta}_size", 's');
 
@@ -156,7 +135,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       $size = variable_get("flickr_block_{$delta}_size", 's');
 
       $block['subject'] = t('Flickr random photos');
-      $block['content'] = _flickr_block_random($user_id, $show_n, $size);
+      $block['content'] = _flickr_block_recent($user_id, $show_n, $size);
 
       break;
     case 4:
@@ -183,7 +162,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function _flickr_get_userid($id) {
+function _flickr_block_get_userid($id) {
   $result = db_fetch_object(db_query('SELECT data FROM {users} WHERE uid = %d', $id));
   $data = unserialize($result->data);
   return $data['nsid'];
