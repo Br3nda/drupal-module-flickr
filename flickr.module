@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.22 2007/01/01 23:00:48 drewish Exp $
+// $Id: flickr.module,v 1.23 2007/01/02 17:43:14 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -10,7 +10,7 @@ require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 function flickr_help($section) {
   switch ($section) {
     case 'admin/settings/flickr':
-     return t("You will need a Flickr API key to use this module. You can apply for one at <a href='%link'>%link</a>", array('%link' => url('http://www.flickr.com/services/api/keys/apply/')));
+     return t("You will need a Flickr API key to use this module. You can apply for one at <a href='@link'>@link</a>", array('@link' => url('http://www.flickr.com/services/api/keys/apply/')));
     case 'admin/help#flickr':
       return t('The flickr module uses XML-RPC to connect to Flickr\'s API and retreive photo information.');
   }
@@ -88,7 +88,7 @@ function flickr_admin_settings_validate($form_id, $form) {
   $key = trim($form['flickr_api_key']);
   $sec = trim($form['flickr_api_secret']);
   $uid = trim($form['flickr_default_userid']);
-  
+
   if ($key && (preg_match('/^[A-Fa-f\d]{32}$/', $key) != 1)) {
     form_set_error('flickr_api_key', t('This does not appear to be a Flickr API key.'));
   }
@@ -113,7 +113,7 @@ function flickr_admin_settings_submit($form_id, $form) {
   $form['flickr_api_key'] = trim($form['flickr_api_key']);
   $form['flickr_api_secret'] = trim($form['flickr_api_secret']);
   $form['flickr_default_userid'] = trim($form['flickr_default_userid']);
-  
+
   // ... replace the usernames with a user id ...
   if (preg_match('/^\d+@N\d+$/', $form['flickr_default_userid']) == 0) {
     $username = $form['flickr_default_userid'];
@@ -123,7 +123,7 @@ function flickr_admin_settings_submit($form_id, $form) {
       $form['flickr_default_userid'] = $response['user']['id'];
     }
   }
-  
+
   // ... and save the settings
   system_settings_form_submit($form_id, $form);
 }
@@ -217,7 +217,7 @@ function theme_flickr_photoset_box($ps, $owner, $size = NULL, $format = NULL) {
  */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
   $data = unserialize($account->data);
-  
+
   if ($op == 'form' && $category == 'account') {
     $form['flickr'] = array(
       '#type' => 'fieldset',
