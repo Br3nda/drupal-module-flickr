@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.23 2007/01/02 17:43:14 drewish Exp $
+// $Id: flickr.module,v 1.24 2007/01/02 19:50:40 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -35,13 +35,13 @@ function flickr_menu($may_cache) {
     $items[] = array(
       'path' => 'flickr', 'title' => t('Flickr'),
       'access' => user_access('access content'),
-      'type' => MENU_CALLBACK,
+      'type' => MENU_SUGGESTED_ITEM,
       'callback' => 'flickr_recent');
 
     $items[] = array(
       'path' => 'flickr/photosets', 'title' => t('Flickr photosets'),
       'access' => user_access('access content'),
-      'type' => MENU_NORMAL_ITEM,
+      'type' => MENU_SUGGESTED_ITEM,
       'callback' => 'flickr_photosets',
     );
 
@@ -65,12 +65,14 @@ function flickr_admin_settings() {
   $form['flickr_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('API Key'),
+    '#required' => TRUE,
     '#default_value' => variable_get('flickr_api_key', ''),
     '#description' => t('API Key from Flickr'),
   );
   $form['flickr_api_secret'] = array(
     '#type' => 'textfield',
     '#title' => t('API Shared Secret'),
+    '#required' => TRUE,
     '#default_value' => variable_get('flickr_api_secret', ''),
     '#description' => t("API key's secret from Flickr."),
   );
@@ -80,6 +82,11 @@ function flickr_admin_settings() {
     '#default_value' => variable_get('flickr_default_userid', ''),
     '#description' => t("An, optional, default Flickr username or user id. This will be used when no user is specified."),
   );
+
+  // we need an api key before we can verify usernames
+  if (!$form['flickr_api_key']['#default_value']) {
+    $form['flickr_default_userid']['#disabled'] = TRUE;
+  }
 
   return system_settings_form($form);
 }
@@ -102,7 +109,7 @@ function flickr_admin_settings_validate($form_id, $form) {
     else {
       $response = flickr_user_find_by_username($uid);
       if (!isset($response['stat']) || $response['stat'] != 'ok') {
-        form_set_error('flickr_default_userid', t('This is neither a Flickr user name or id.'));
+        form_set_error('flickr_default_userid', t('%uid is not a Flickr user id and it does not appear to be a valid user name. Flickr reported %error-message', array('%uid' => $uid, '%error-message' => $response['message'])));
       }
     }
   }
