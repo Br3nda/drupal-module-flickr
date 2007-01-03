@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.24 2007/01/02 19:50:40 drewish Exp $
+// $Id: flickr.module,v 1.25 2007/01/03 18:53:03 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -31,7 +31,6 @@ function flickr_menu($may_cache) {
       'type' => MENU_NORMAL_ITEM,
       'description' => t('Change settings for the flickr module.'));
 
-
     $items[] = array(
       'path' => 'flickr', 'title' => t('Flickr'),
       'access' => user_access('access content'),
@@ -44,7 +43,6 @@ function flickr_menu($may_cache) {
       'type' => MENU_SUGGESTED_ITEM,
       'callback' => 'flickr_photosets',
     );
-
 
     $items[] = array(
       'path' => 'flickr/auth',
