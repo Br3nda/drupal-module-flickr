@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.25 2007/01/03 18:53:03 andrewlevine Exp $
+// $Id: flickr.module,v 1.26 2007/01/05 09:04:47 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -218,24 +218,52 @@ function theme_flickr_photoset_box($ps, $owner, $size = NULL, $format = NULL) {
 
 /**
  * Implimentation of the hook_user()
- * Add an extra field for the user to enter his flickr nsid.
+ * Add an extra field for the user to enter his flickr identifier.
  */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
-  $data = unserialize($account->data);
-
   if ($op == 'form' && $category == 'account') {
+    $user = user_load(array('uid' => $account->uid));
     $form['flickr'] = array(
       '#type' => 'fieldset',
       '#title' => t('Flickr settings'),
       '#collapsible' => FALSE,
       '#weight' => 4,
     );
-    $form['flickr']['nsid'] = array(
+    $form['flickr']['flickr_identifier'] = array(
       '#type' => 'textfield',
-      '#title' => t('Flickr NSID'),
-      '#default_value' => $data['nsid'],
-      '#description' => t('Please enter your Flickr NSID.'),
+      '#title' => t('Flickr identifier'),
+      '#default_value' => $user->flickr['identifier'] ? $user->flickr['identifier'] : '',
+      '#description' => t('Enter either your Flickr username, the email address associated with your Flickr account, or your Flickr NSID'),
+      '#maxlength' => 64,
     );
     return $form;
+  }
+  elseif ($op == 'validate') {
+    if (!empty($edit['flickr_identifier'])) {
+      if (($nsid = flickr_user_find_by_identifier($edit['flickr_identifier'])) === FALSE) {
+        form_set_error('flickr_identifier', t('%ident is not a valid Flickr username, email, or NSID.', array('%ident' => $edit['flickr_identifier'])));
+      }
+      else {
+        $account->flickr['nsid'] = $nsid;
+      }
+    }
+  }
+  elseif ($op == 'insert' || $op == 'update') {
+    db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
+    if (!empty($edit['flickr_identifier'])) {
+      db_query('INSERT INTO {flickr_users} (uid, nsid, identifier) VALUES (%d, \'%s\', \'%s\')', $account->uid, $account->flickr['nsid'], $edit['flickr_identifier']);
+    }
+    unset($account->flickr);
+  }
+  elseif ($op == 'load') {
+    $result = db_query('SELECT * FROM {flickr_users} WHERE uid=%d', $account->uid);
+    if (db_num_rows($result) > 0) {
+      $flickr_info = db_fetch_object($result);
+      $account->flickr['identifier'] = $flickr_info->identifier;
+      $account->flickr['nsid'] = $flickr_info->nsid;
+    }
+  }
+  elseif ($op == 'delete') {
+    db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
   }
 }

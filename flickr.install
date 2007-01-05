@@ -1,0 +1,26 @@
+<?php
+// $Id: flickr.install,v 1.1 2007/01/05 09:04:47 andrewlevine Exp $
+
+function flickr_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query('CREATE TABLE IF NOT EXISTS {flickr_users} (
+        `uid` INT( 10 ) UNSIGNED NOT NULL ,
+        `nsid` VARCHAR( 64 ) NOT NULL, 
+        `identifier` VARCHAR( 64 ) NOT NULL ,
+        PRIMARY KEY ( `uid` ) );' );
+      break;
+  }
+}
+
+function flickr_uninstall() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query('DROP TABLE IF EXISTS {flickr_users}');
+      break;
+  }
+}
+
+?>

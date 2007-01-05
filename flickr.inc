@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.11 2007/01/01 22:09:39 drewish Exp $
+// $Id: flickr.inc,v 1.12 2007/01/05 09:04:47 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -172,6 +172,23 @@ function flickr_photoset_get_info($photoset_id) {
     array('photoset_id' => $photoset_id)
   );
 }
+/**
+ * Returns an NSID or FALSE on failure
+ */
+function flickr_user_find_by_identifier($identifier) {
+  if (preg_match('/^\d+@N\d+$/', $identifier)) {
+    //identifier is an NSID
+    return $identifier;
+  }
+  if (valid_email_address($identifier) && !flickr_error(($response = flickr_user_find_by_email($identifier)))) {
+    return $response['user']['nsid'];
+  }
+  if (!flickr_error($response = flickr_user_find_by_username($identifier))) {
+    return $response['user']['nsid'];
+  }
+  
+  return FALSE;
+}
 
 function flickr_user_find_by_username($username) {
   return flickr_request(
@@ -179,3 +196,20 @@ function flickr_user_find_by_username($username) {
     array('username' => $username)
   );
 }
+
+function flickr_user_find_by_email($email) {
+  return $response = flickr_request(
+    'flickr.people.findByEmail',
+    array('find_email' => $email)
+  );
+}
+
+function flickr_error($response) {
+  if (array_key_exists('stat', $response) && $response['stat'] == 'ok') {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+  
