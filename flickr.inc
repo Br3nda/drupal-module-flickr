@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.12 2007/01/05 09:04:47 andrewlevine Exp $
+// $Id: flickr.inc,v 1.13 2007/01/05 21:34:57 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -87,8 +87,11 @@ function flickr_request($method, $args, $cacheable = TRUE) {
   return FALSE;
 }
 
-function flickr_img($photo, $size = '-') {
+function flickr_img($photo, $size = NULL) {
   $sizes = flickr_photo_sizes();
+  if (!isset($size)) {
+    $size = '-';
+  }
   if (!isset($sizes[$size])) {
     return;
   }
