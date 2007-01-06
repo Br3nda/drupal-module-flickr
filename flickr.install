@@ -1,15 +1,18 @@
 <?php
-// $Id: flickr.install,v 1.1 2007/01/05 09:04:47 andrewlevine Exp $
+// $Id: flickr.install,v 1.2 2007/01/06 00:41:03 andrewlevine Exp $
 
 function flickr_install() {
   switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
-      db_query('CREATE TABLE IF NOT EXISTS {flickr_users} (
-        `uid` INT( 10 ) UNSIGNED NOT NULL ,
-        `nsid` VARCHAR( 64 ) NOT NULL, 
-        `identifier` VARCHAR( 64 ) NOT NULL ,
-        PRIMARY KEY ( `uid` ) );' );
+      db_query('
+        CREATE TABLE {flickr_users} (
+          `uid` INT( 10 ) UNSIGNED NOT NULL ,
+          `nsid` VARCHAR( 64 ) NOT NULL, 
+          `identifier` VARCHAR( 64 ) NOT NULL ,
+          PRIMARY KEY ( `uid` )
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */;
+      ');
       break;
   }
 }
@@ -23,4 +26,23 @@ function flickr_uninstall() {
   }
 }
 
-?>
+/**
+ * Adding a table to map Drupal users to Flickr users
+ */
+function flickr_update_1() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql('
+        CREATE TABLE IF NOT EXISTS {flickr_users} (
+          `uid` INT( 10 ) UNSIGNED NOT NULL ,
+          `nsid` VARCHAR( 64 ) NOT NULL, 
+          `identifier` VARCHAR( 64 ) NOT NULL ,
+          PRIMARY KEY ( `uid` )
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */;
+      ');
+      break;
+  }
+  return $ret;
+}
