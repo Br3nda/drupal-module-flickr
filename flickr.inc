@@ -1,8 +1,15 @@
 <?php
-// $Id: flickr.inc,v 1.13 2007/01/05 21:34:57 drewish Exp $
+// $Id: flickr.inc,v 1.14 2007/01/23 15:49:26 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
+/**
+ * Return a list of all possible photo sizes with the right
+ * description and label
+ *
+ * @return
+ *	A list of all photo sizes
+ */
 function flickr_photo_sizes() {
   return array(
     's' => array(
@@ -41,6 +48,9 @@ function flickr_photo_sizes() {
  *   associative array of arguments names and values
  * @param $cacheable
  *   boolean indicating if it's safe cache the results of this request
+ *
+ * @return
+ *   the result of the request 
  */
 function flickr_request($method, $args, $cacheable = TRUE) {
   $args['api_key'] = trim(variable_get('flickr_api_key', ''));
@@ -87,6 +97,19 @@ function flickr_request($method, $args, $cacheable = TRUE) {
   return FALSE;
 }
 
+/**
+ * This function will try to create a html image tag referencing the Flickr
+ * photo with the desired size if that size is available for this photo.
+ *
+ * @param $photo
+ *   the photo variable
+ * @param $size
+ *   the desired image size
+ *
+ * @return
+ *   a html image tag referencing the image of the desired
+ *   size if it is available.
+ */
 function flickr_img($photo, $size = NULL) {
   $sizes = flickr_photo_sizes();
   if (!isset($size)) {
@@ -133,7 +156,20 @@ function flickr_img($photo, $size = NULL) {
   return theme('image', $img_url, $title, $title, $attributes, FALSE);
 }
 
-
+/**
+ * Create the url to $photo with size $size using the correct image farm
+ * from the $photo variable
+ *
+ * @param $photo
+ *   photo to which the url should point
+ * @param $size
+ *   size of the photo
+ * @param $format
+ *   format of the photo
+ *
+ * @return
+ *   url for $photo with the correct size and format
+ */
 function flickr_photo_img($photo, $size = NULL, $format = NULL) {
   // early images don't have a farm setting so default to 1.
   $farm = isset($photo['farm']) ? $photo['farm'] : 1;
@@ -145,16 +181,42 @@ function flickr_photo_img($photo, $size = NULL, $format = NULL) {
   return "http://farm{$farm}.static.flickr.com/{$server}/{$id}_{$secret}" .($size ? "_$size." : '.') . ($size == 'o' ? $format : 'jpg');
 }
 
+/**
+ * @param $owner
+ *   owner of the photo
+ * @param $id
+ *   id of the photo to reference in the url
+ *
+ * @return
+ *   url for the flickr photo page showing photo with $id of $owner
+ */
 function flickr_photo_page_url($owner, $id = NULL) {
   $owner = is_array($owner) ? $owner['nsid']: $owner;
   return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
 }
 
+/**
+ * @param $owner
+ *   owner of the photoset
+ * @param $id
+ *   id of the photoset to which the url must lead
+ *
+ * @return
+ *   url for the photoset page of photoset $id of owner $owner
+ */
 function flickr_photoset_page_url($owner, $id = NULL) {
   $owner = is_array($owner) ? $owner['nsid']: $owner;
   return "http://flickr.com/photos/$owner/sets/$id";
 }
 
+/**
+ * @param $photo_id
+ *   id of the photo to get info about
+ *
+ * @return
+ *   response from the flickr method flickr.photos.getInfo
+ *   (http://www.flickr.com/services/api/flickr.photos.getInfo.html)
+ */
 function flickr_photo_get_info($photo_id) {
   return flickr_request(
     'flickr.photos.getInfo',
@@ -162,6 +224,14 @@ function flickr_photo_get_info($photo_id) {
   );
 }
 
+/**
+ * @param $photo_id
+ *   id of the photo to get the available sizes of
+ *
+ * @return
+ *   response from the flickr method flickr.photos.getSizes
+ *   (http://www.flickr.com/services/api/flickr.photos.getSizes.html)
+ */
 function flickr_photo_get_sizes($photo_id) {
   return flickr_request(
     'flickr.photos.getSizes',
@@ -169,6 +239,14 @@ function flickr_photo_get_sizes($photo_id) {
   );
 }
 
+/**
+ * @param $photoset_id
+ *   id of the photoset to get information about
+ * 
+ * @return
+ *   response from the flickr method flickr.photosets.getInfo
+ *   (http://www.flickr.com/services/api/flickr.photosets.getInfo.html)
+ */
 function flickr_photoset_get_info($photoset_id) {
   return flickr_request(
     'flickr.photosets.getInfo',
@@ -176,7 +254,22 @@ function flickr_photoset_get_info($photoset_id) {
   );
 }
 /**
- * Returns an NSID or FALSE on failure
+ * Tries to match an 'identifier' onto a flickr nsid
+ *
+ * This function will first see whether $identifier is allready
+ * a nsid (format check only, no api call).  If it is not and the
+ * identifier has the format of an email, an api call will be made to 
+ * check whether there is an nsid for that email.  If this is not the
+ * case, the $identifier is treated as a username and an api call is
+ * made to find the nsid for that username.
+ *
+ * If none of these succees, the result will be false
+ *
+ * @param $identifier
+ *   identifier to find an nsid for
+ *
+ * @return
+ *   valid nsid or false if none can be found
  */
 function flickr_user_find_by_identifier($identifier) {
   if (preg_match('/^\d+@N\d+$/', $identifier)) {
@@ -193,6 +286,16 @@ function flickr_user_find_by_identifier($identifier) {
   return FALSE;
 }
 
+/**
+ * Lookup an nsid for a username.
+ *
+ * @param $username
+ *   username to look for
+ * 
+ * @return
+ *   response from the flickr method flickr.people.findByUsername
+ *   (http://www.flickr.com/services/api/flickr.people.findByUsername.html)
+ */
 function flickr_user_find_by_username($username) {
   return flickr_request(
     'flickr.people.findByUsername',
@@ -200,6 +303,16 @@ function flickr_user_find_by_username($username) {
   );
 }
 
+/**
+ * Lookup an nsid for an email address
+ * 
+ * @param $email
+ *   email to look for
+ *
+ * @return
+ *   response from the flickr method flickr.people.findByEmail
+ *   (http://www.flickr.com/services/api/flickr.people.findByEmail.html)
+ */
 function flickr_user_find_by_email($email) {
   return $response = flickr_request(
     'flickr.people.findByEmail',
@@ -207,6 +320,15 @@ function flickr_user_find_by_email($email) {
   );
 }
 
+/**
+ * Check if the response from the Flickr api call was an error
+ *
+ * @param $response
+ *   response to check
+ *
+ * @return
+ *    true if the response is an error message
+ */
 function flickr_error($response) {
   if (array_key_exists('stat', $response) && $response['stat'] == 'ok') {
     return FALSE;
