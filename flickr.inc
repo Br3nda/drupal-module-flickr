@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.14 2007/01/23 15:49:26 drewish Exp $
+// $Id: flickr.inc,v 1.15 2007/01/24 18:41:13 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -253,6 +253,19 @@ function flickr_photoset_get_info($photoset_id) {
     array('photoset_id' => $photoset_id)
   );
 }
+
+/**
+ * @param $nsid
+ *   nsid of the user whose photoset list you want
+ * 
+ * @return
+ *   response from the flickr method flickr.photosets.getList
+ *   (http://www.flickr.com/services/api/flickr.photosets.getList.html)
+ */
+function flickr_photoset_get_list($nsid) {
+  return flickr_request('flickr.photosets.getList', array('user_id' => $nsid));
+}
+
 /**
  * Tries to match an 'identifier' onto a flickr nsid
  *
@@ -321,6 +334,39 @@ function flickr_user_find_by_email($email) {
 }
 
 /**
+ * @param $nsid
+ *   nsid of the user whose tags will be returned
+ * @param $count
+ *   number of tags to return
+ * 
+ * @return
+ *   response from the flickr method flickr.tags.getListUserPopular
+ *   (http://www.flickr.com/services/api/flickr.tags.getListUserPopular.html)
+ */
+function flickr_tags_get_list_user_popular($nsid, $count=NULL) {
+  $args = array('user_id'=>$nsid);
+  if ($count != NULL) {
+    $args['count'] = $count;
+  }
+  return flickr_request('flickr.tags.getListUserPopular', $args);
+}
+
+/**
+ * @param $nsid
+ *   nsid of the user whose photoset tags will be returned
+ * 
+ * @return
+ *   response from the flickr method flickr.tags.getListUser
+ *   (http://www.flickr.com/services/api/flickr.tags.getListUser.html)
+ */
+function flickr_tags_get_list_user($nsid){
+  return $response = flickr_request(
+    'flickr.tags.getListUser',
+    array('user_id' => $nsid)
+  );
+}
+
+/**
  * Check if the response from the Flickr api call was an error
  *
  * @param $response
@@ -337,4 +383,18 @@ function flickr_error($response) {
     return TRUE;
   }
 }
-  
+
+/**
+ * Display an error message and write an error to watchdog.
+ * Only call this method if flickr_error returns TRUE.
+ *
+ * @param $response
+ *   response to display
+ */
+function flickr_set_error($response) {
+  $err_message = t('Flickr error @error_id: %flickr_error', array('@error_id'=>$response['code'], 
+        '%flickr_error'=> $response['message']));
+  drupal_set_message($err_message, 'error');
+  watchdog('flickr', $err_message, WATCHDOG_WARNING);
+}
+
