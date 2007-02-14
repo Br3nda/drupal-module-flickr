@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.27 2007/01/24 18:42:16 andrewlevine Exp $
+// $Id: flickr.module,v 1.28 2007/02/14 23:44:02 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -202,7 +202,7 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
       '#type' => 'textfield',
       '#title' => t('Flickr identifier'),
       '#default_value' => $user->flickr['identifier'] ? $user->flickr['identifier'] : '',
-      '#description' => t('Enter either your Flickr username, the email address associated with your Flickr account, or your Flickr NSID'),
+      '#description' => t('Enter either your Flickr username, the email address associated with your Flickr account, or your Flickr NSID. Leave this box empty to delete your Flickr page on this site.'),
       '#maxlength' => 64,
     );
     return $form;
@@ -218,9 +218,15 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
     }
   }
   elseif ($op == 'insert' || $op == 'update') {
-    db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
-    if (!empty($edit['flickr_identifier'])) {
-      db_query('INSERT INTO {flickr_users} (uid, nsid, identifier) VALUES (%d, \'%s\', \'%s\')', $account->uid, $account->flickr['nsid'], $edit['flickr_identifier']);
+    if (isset($edit['flickr_identifier'])) {
+      db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
+      if (!empty($edit['flickr_identifier'])) {
+        db_query('INSERT INTO {flickr_users} (uid, nsid, identifier) VALUES (%d, \'%s\', \'%s\')', $account->uid, $account->flickr['nsid'], $edit['flickr_identifier']);
+      }
+      else {
+        //flickr account deleted
+        drupal_set_message(t('%username\'s Flickr page has been deleted.', array('%username'=> $account->name)));
+      }
     }
     unset($account->flickr);
   }
