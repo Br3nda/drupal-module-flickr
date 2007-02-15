@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.28 2007/02/14 23:44:02 andrewlevine Exp $
+// $Id: flickr.module,v 1.29 2007/02/15 02:54:46 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -78,7 +78,6 @@ function flickr_menu($may_cache) {
       }
       elseif ($account !== FALSE && !isset($account->flickr['nsid'])) {
         drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
-        return '';
       }
     }
   }
