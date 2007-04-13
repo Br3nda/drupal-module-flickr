@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.15 2007/01/24 18:41:13 andrewlevine Exp $
+// $Id: flickr.inc,v 1.16 2007/04/13 01:04:33 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -50,7 +50,7 @@ function flickr_photo_sizes() {
  *   boolean indicating if it's safe cache the results of this request
  *
  * @return
- *   the result of the request 
+ *   an array with the the result of the request 
  */
 function flickr_request($method, $args, $cacheable = TRUE) {
   $args['api_key'] = trim(variable_get('flickr_api_key', ''));
@@ -85,12 +85,12 @@ function flickr_request($method, $args, $cacheable = TRUE) {
   $result = drupal_http_request($url);
   if ($result->code == 200) {
     // make sure it unserializes
-    if ($object = unserialize($result->data)) {
+    if ($array = unserialize($result->data)) {
       // save a cacheable result for future use
       if ($cacheable) {
         cache_set($arghash, 'cache', $result->data, time() + 3600);
       }
-      return $object;
+      return $array;
     }
   }
 
