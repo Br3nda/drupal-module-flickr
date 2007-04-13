@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.4 2007/01/05 21:41:48 drewish Exp $
+// $Id: flickr_filter.module,v 1.5 2007/04/13 16:51:23 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -76,16 +76,13 @@ function flickr_filter_callback_photo($matches) {
   if (isset($config['id'])) {
     $result = flickr_photo_get_info($config['id']);
     if ($result['stat'] == 'ok') {
-      $output .= '<span class="flickr-photo">';
-      $output .= theme('flickr_photo', $result['photo'], $config['size']);
-      $output .= "</span>\n";
+      return theme('flickr_filter_photo', $result['photo'], $config['size']);
     }
     else {
       drupal_set_message(t('The Flickr filter had a problem. Flickr says: %message', array('%id' => $config['id'], '%message' => $result['message'])), 'error');
     }
   }
-#print "<pre>"; var_dump($output); print "</pre>";
-  return $output ;
+  return '';
 }
 
 /**
@@ -93,18 +90,30 @@ function flickr_filter_callback_photo($matches) {
  */
 function flickr_filter_callback_photoset($matches) {
   $config = flickr_filter_split_config($matches[1]);
-
-  $output = '';
   if (isset($config['id'])) {
     $result = flickr_photoset_get_info($config['id']);
     if ($result['stat'] == 'ok') {
-      $output .= '<span class="flickr-photoset">';
-      $output .= theme('flickr_photoset', $result['photoset'], $result['photoset']['owner'], $config['size']);
-      $output .= "</span>\n";
+      return theme('flickr_filter_photoset', $result['photoset'], $result['photoset']['owner'], $config['size']);
     }
     else {
       drupal_set_message(t('The Flickr filter had a problem. Flickr says: %message', array('%id' => $config['id'], '%message' => $result['message'])), 'error');
     }
   }
-  return $output ;
+  return '';
+}
+
+function theme_flickr_filter_photo($p, $size = NULL, $format = NULL) {
+  $img = flickr_img($p, $size);
+  $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
+  return '<span class="flickr-photo">'
+    . l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE)
+    . "</span>\n";
+}
+
+function theme_flickr_filter_photoset($ps, $owner, $size = NULL, $format = NULL) {
+  $img = flickr_img($ps, $size);
+  $photo_url = flickr_photoset_page_url($owner, $ps['id']);
+  return '<span class="flickr-photoset">'
+    . l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE)
+    . "</span>\n";
 }
