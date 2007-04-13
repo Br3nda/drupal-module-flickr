@@ -1,12 +1,11 @@
 <?php
 
-// $Id: flickr_block.module,v 1.5 2007/04/12 17:28:01 drewish Exp $
+// $Id: flickr_block.module,v 1.6 2007/04/13 00:23:26 drewish Exp $
 
 
 /**
  * Implementation of hook_block().
  */
-
 function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
   case 'list':
@@ -44,7 +43,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       '#options' => $count_options,
       '#title' => t('Show the last <em>n</em> photos'),
       '#default_value' => variable_get("flickr_block_{$delta}_show_n", 4),
-      '#description' => t("The block will show this many of the user's photos.")
+      '#description' => t("The block will display this many photos.")
     );
     $form["flickr_block_{$delta}_size"] = array(
       '#type' => 'select',
@@ -96,6 +95,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     case 5:
       variable_set("flickr_block_{$delta}_user_id", $edit["flickr_block_{$delta}_user_id"]);
       variable_set("flickr_block_{$delta}_show_n", $edit["flickr_block_{$delta}_show_n"]);
+      variable_set("flickr_block_{$delta}_size", $edit["flickr_block_{$delta}_size"]);
       break;
     }
     break;
