@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.16 2007/04/13 01:04:33 drewish Exp $
+// $Id: flickr.inc,v 1.17 2007/04/13 17:21:08 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -50,7 +50,7 @@ function flickr_photo_sizes() {
  *   boolean indicating if it's safe cache the results of this request
  *
  * @return
- *   an array with the the result of the request 
+ *   an array with the the result of the request
  */
 function flickr_request($method, $args, $cacheable = TRUE) {
   $args['api_key'] = trim(variable_get('flickr_api_key', ''));
@@ -118,18 +118,18 @@ function flickr_img($photo, $size = NULL) {
   if (!isset($sizes[$size])) {
     return;
   }
-  
+
   $attributes = array();
   // photoset's use primary instead of id to specify the image.
   if (isset($photo['primary'])) {
     $id = $photo['primary'];
     $attributes['class'] = 'flickr-photoset-img';
-  } 
+  }
   else {
     $id = $photo['id'];
     $attributes['class'] = 'flickr-photo-img';
   }
-  
+
   if ($size == 's') {
     $attributes['height'] = $attributes['width'] = 75;
     $img_url = flickr_photo_img($photo, $size);
@@ -177,7 +177,7 @@ function flickr_photo_img($photo, $size = NULL, $format = NULL) {
   // photoset's use primary instead of id to specify the image.
   $id = isset($photo['primary']) ? $photo['primary'] : $photo['id'];
   $secret = $photo['secret'];
-  
+
   return "http://farm{$farm}.static.flickr.com/{$server}/{$id}_{$secret}" .($size ? "_$size." : '.') . ($size == 'o' ? $format : 'jpg');
 }
 
@@ -242,7 +242,7 @@ function flickr_photo_get_sizes($photo_id) {
 /**
  * @param $photoset_id
  *   id of the photoset to get information about
- * 
+ *
  * @return
  *   response from the flickr method flickr.photosets.getInfo
  *   (http://www.flickr.com/services/api/flickr.photosets.getInfo.html)
@@ -257,7 +257,7 @@ function flickr_photoset_get_info($photoset_id) {
 /**
  * @param $nsid
  *   nsid of the user whose photoset list you want
- * 
+ *
  * @return
  *   response from the flickr method flickr.photosets.getList
  *   (http://www.flickr.com/services/api/flickr.photosets.getList.html)
@@ -271,7 +271,7 @@ function flickr_photoset_get_list($nsid) {
  *
  * This function will first see whether $identifier is allready
  * a nsid (format check only, no api call).  If it is not and the
- * identifier has the format of an email, an api call will be made to 
+ * identifier has the format of an email, an api call will be made to
  * check whether there is an nsid for that email.  If this is not the
  * case, the $identifier is treated as a username and an api call is
  * made to find the nsid for that username.
@@ -295,7 +295,7 @@ function flickr_user_find_by_identifier($identifier) {
   if (!flickr_error($response = flickr_user_find_by_username($identifier))) {
     return $response['user']['nsid'];
   }
-  
+
   return FALSE;
 }
 
@@ -304,7 +304,7 @@ function flickr_user_find_by_identifier($identifier) {
  *
  * @param $username
  *   username to look for
- * 
+ *
  * @return
  *   response from the flickr method flickr.people.findByUsername
  *   (http://www.flickr.com/services/api/flickr.people.findByUsername.html)
@@ -318,7 +318,7 @@ function flickr_user_find_by_username($username) {
 
 /**
  * Lookup an nsid for an email address
- * 
+ *
  * @param $email
  *   email to look for
  *
@@ -338,7 +338,7 @@ function flickr_user_find_by_email($email) {
  *   nsid of the user whose tags will be returned
  * @param $count
  *   number of tags to return
- * 
+ *
  * @return
  *   response from the flickr method flickr.tags.getListUserPopular
  *   (http://www.flickr.com/services/api/flickr.tags.getListUserPopular.html)
@@ -354,7 +354,7 @@ function flickr_tags_get_list_user_popular($nsid, $count=NULL) {
 /**
  * @param $nsid
  *   nsid of the user whose photoset tags will be returned
- * 
+ *
  * @return
  *   response from the flickr method flickr.tags.getListUser
  *   (http://www.flickr.com/services/api/flickr.tags.getListUser.html)
@@ -392,7 +392,7 @@ function flickr_error($response) {
  *   response to display
  */
 function flickr_set_error($response) {
-  $err_message = t('Flickr error @error_id: %flickr_error', array('@error_id'=>$response['code'], 
+  $err_message = t('Flickr error @error_id: %flickr_error', array('@error_id'=>$response['code'],
         '%flickr_error'=> $response['message']));
   drupal_set_message($err_message, 'error');
   watchdog('flickr', $err_message, WATCHDOG_WARNING);
