@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.17 2007/04/13 17:21:08 drewish Exp $
+// $Id: flickr.inc,v 1.18 2007/04/13 22:44:51 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -7,8 +7,7 @@ define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
  * Return a list of all possible photo sizes with the right
  * description and label
  *
- * @return
- *	A list of all photo sizes
+ * @return An array of photo sizes
  */
 function flickr_photo_sizes() {
   return array(
@@ -105,12 +104,14 @@ function flickr_request($method, $args, $cacheable = TRUE) {
  *   the photo variable
  * @param $size
  *   the desired image size
+ * @param $attribs
+ *   an optional array of HTML attributes to pass to the image
  *
  * @return
  *   a html image tag referencing the image of the desired
  *   size if it is available.
  */
-function flickr_img($photo, $size = NULL) {
+function flickr_img($photo, $size = NULL, $attributes = NULL) {
   $sizes = flickr_photo_sizes();
   if (!isset($size)) {
     $size = '-';
@@ -118,16 +119,18 @@ function flickr_img($photo, $size = NULL) {
   if (!isset($sizes[$size])) {
     return;
   }
+  if (!isset($attributes) || !is_array($attributes)) {
+    $attributes = array();
+  }
 
-  $attributes = array();
   // photoset's use primary instead of id to specify the image.
   if (isset($photo['primary'])) {
     $id = $photo['primary'];
-    $attributes['class'] = 'flickr-photoset-img';
+    $attributes['class'] .= ' flickr-photoset-img';
   }
   else {
     $id = $photo['id'];
-    $attributes['class'] = 'flickr-photo-img';
+    $attributes['class'] .= ' flickr-photo-img';
   }
 
   if ($size == 's') {

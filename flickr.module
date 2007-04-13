@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.29 2007/02/15 02:54:46 andrewlevine Exp $
+// $Id: flickr.module,v 1.30 2007/04/13 22:44:51 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -163,14 +163,14 @@ function flickr_admin_settings_submit($form_id, $form) {
   system_settings_form_submit($form_id, $form);
 }
 
-function theme_flickr_photo($p, $size = NULL, $format = NULL) {
-  $img = flickr_img($p, $size);
+function theme_flickr_photo($p, $size = NULL, $format = NULL, $attribs = NULL) {
+  $img = flickr_img($p, $size, $attribs);
   $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
   return l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE);
 }
 
-function theme_flickr_photo_box($p, $size = NULL, $format = NULL) {
-  $img = flickr_img($p, $size);
+function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NULL) {
+  $img = flickr_img($p, $size, $attribs);
   $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
   $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
 
