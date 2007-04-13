@@ -1,8 +1,10 @@
 <?php
-// $Id: flickr_block.install,v 1.1 2007/04/13 16:27:03 drewish Exp $
+// $Id: flickr_block.install,v 1.2 2007/04/13 16:30:39 drewish Exp $
 
 function flickr_block_uninstall() {
-  variable_del();
+  foreach (range(0,6) as $delta) {
+    variable_del("flickr_block_{$delta}");
+  }
 }
 
 /**
@@ -20,7 +22,9 @@ function flickr_block_update_1() {
         'size' => $size,
       ));
     }
-    drupal_set_message(print_r(variable_get('flickr_block_'. $delta, ''), TRUE));
+    variable_del("flickr_block_{$delta}_user_id");
+    variable_del("flickr_block_{$delta}_show_n");
+    variable_del("flickr_block_{$delta}_size");
   }
   return array();
 }
