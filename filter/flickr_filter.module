@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.6 2007/04/13 22:44:51 drewish Exp $
+// $Id: flickr_filter.module,v 1.7 2007/04/14 02:03:30 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -83,7 +83,7 @@ function flickr_filter_callback_photo($matches) {
 
   if (isset($config['id'])) {
     $result = flickr_photo_get_info($config['id']);
-    if ($result['stat'] == 'ok') {
+    if (!flickr_error($result)) {
       return theme('flickr_filter_photo', $result['photo'], $config['size'], $attribs);
     }
     else {
@@ -101,7 +101,7 @@ function flickr_filter_callback_photoset($matches) {
 
   if (isset($config['id'])) {
     $result = flickr_photoset_get_info($config['id']);
-    if ($result['stat'] == 'ok') {
+    if (!flickr_error($result)) {
       return theme('flickr_filter_photoset', $result['photoset'], $result['photoset']['owner'], $config['size'], $attribs);
     }
     else {
