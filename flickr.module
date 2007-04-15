@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.30 2007/04/13 22:44:51 drewish Exp $
+// $Id: flickr.module,v 1.31 2007/04/15 05:33:24 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -39,6 +39,14 @@ function flickr_menu($may_cache) {
       'access' => user_access('administer site configuration'),
       'type' => MENU_NORMAL_ITEM,
       'description' => t('Change settings for the flickr module.'));
+
+    $items[] = array(
+      'path' => 'flickr',
+      'title' => t('Flickr photos'),
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+      'callback' => 'flickr_photos',
+      'description' => t('Flickr photos of default user id.'));
 
     $items[] = array(
       'path' => 'flickr/auth',
@@ -114,6 +122,7 @@ function flickr_admin_settings() {
   // we need an api key before we can verify usernames
   if (!$form['flickr_api_key']['#default_value']) {
     $form['flickr_default_userid']['#disabled'] = TRUE;
+    $form['flickr_default_userid']['#description'] .= t(" Disabled until a valid API Key is set.");
   }
 
   return system_settings_form($form);
@@ -242,18 +251,37 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
   }
 }
 
-function flickr_photos($uid) {
+function flickr_photos($uid = NULL) {
   drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
 
-  global $pager_page_array, $pager_total,$pager_total_items;
+  global $pager_page_array, $pager_total, $pager_total_items;
   //set this to something else if you want multiple pagers
   $element = 0;
   $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
   
-  $photo_arr = flickr_photos_get($uid, array(), $pager_page_array[$element]+1);
+  if ($uid === NULL) {
+    $nsid = variable_get('flickr_default_userid', '');
+    if (!$nsid) {
+      drupal_set_message(t('No default Flickr user id has been set.'));
+      return FALSE;
+    }
+  }
+  else {
+    $account = user_load(array('uid' => $uid));
+    if ($account->flickr['nsid']) {
+      $nsid = $account->flickr['nsid'];
+    }
+    else {
+      drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
+      return FALSE;
+    }
+  }
 
-  if ($photo_arr == FALSE) {
-      return '';
+  $photo_arr = flickr_photos_get($nsid, array(), $pager_page_array[$element]+1);
+
+  if (empty($photo_arr['photos'])) {
+    drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid'=> $nsid)));
+    return FALSE;
   }
   
   //set pager information we just acquired
@@ -264,16 +292,7 @@ function flickr_photos($uid) {
 }
 
 
-function flickr_photos_get($uid, $tags=array(), $page=1, $other_args=array()){
-  $account = user_load(array('uid' => $uid));
-  if (isset($account->flickr['nsid'])) {
-    $nsid = $account->flickr['nsid'];
-  }
-  else {
-    drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
-    return FALSE;
-  }
-  
+function flickr_photos_get($nsid, $tags = array(), $page = 1, $other_args = array()){
   $args = array (
     'user_id' => $nsid,
     'page' => $page,
@@ -299,12 +318,8 @@ function flickr_photos_get($uid, $tags=array(), $page=1, $other_args=array()){
   if (flickr_error($search_response)) {
     flickr_set_error($search_response);
     return FALSE;
-  } 
-  if (!isset($search_response['photos']) || empty($search_response['photos']) ) {
-    drupal_set_message(t('%user has no accessible photos on Flickr', array('%user'=>$account->name)));
-    return FALSE;
   }
-    
+
   return $search_response;
 }
 
