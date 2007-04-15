@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.31 2007/04/15 05:33:24 drewish Exp $
+// $Id: flickr.module,v 1.32 2007/04/15 05:43:39 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -30,7 +30,7 @@ function flickr_perm () {
 function flickr_menu($may_cache) {
   global $user;
   $items = array();
-  
+
   if ($may_cache) {
     $items[] = array(
       'path' => 'admin/settings/flickr', 'title' => t('Flickr'),
@@ -65,24 +65,23 @@ function flickr_menu($may_cache) {
           user_access('view all flickr photos');
         // Only admins can view blocked accounts
         $view_access &= $account->status || $admin_access;
-        
+
         //main flickr user page(photos)
         $items[] = array(
           'path' => 'flickr/' . arg(1),
-          'title' => t("@user's flickr", array('@user' => $account->name)),
-          'type' => MENU_CALLBACK, 
+          'title' => t("@user's Flickr", array('@user' => $account->name)),
+          'type' => MENU_CALLBACK,
           'callback' => 'flickr_photos',
           'callback arguments' => array(arg(1)),
           'access' => $view_access,
         );
         $items[] = array(
-        'path' => 'flickr/'. arg(1) .'/photos',
-        'title' => t('photos'),
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-        'weight' => -10,
-        'access' => $view_access,
-      );
-      
+          'path' => 'flickr/'. arg(1) .'/photos',
+          'title' => t('Photos'),
+          'type' => MENU_DEFAULT_LOCAL_TASK,
+          'weight' => -10,
+          'access' => $view_access,
+        );
       }
       elseif ($account !== FALSE && !isset($account->flickr['nsid'])) {
         drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
@@ -258,7 +257,7 @@ function flickr_photos($uid = NULL) {
   //set this to something else if you want multiple pagers
   $element = 0;
   $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
-  
+
   if ($uid === NULL) {
     $nsid = variable_get('flickr_default_userid', '');
     if (!$nsid) {
@@ -283,11 +282,11 @@ function flickr_photos($uid = NULL) {
     drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid'=> $nsid)));
     return FALSE;
   }
-  
+
   //set pager information we just acquired
   $pager_total[$element] = $photo_arr['photos']['pages'];
   $pager_total_items[$element] = $photo_arr['photos']['total'];
-  
+
   return theme('flickr_photos', $uid, $photo_arr);
 }
 
@@ -297,7 +296,7 @@ function flickr_photos_get($nsid, $tags = array(), $page = 1, $other_args = arra
     'user_id' => $nsid,
     'page' => $page,
   );
-  
+
   //process tags
   if (!empty($tags)) {
     $args['tags'] = implode(',', $tags);
@@ -306,15 +305,15 @@ function flickr_photos_get($nsid, $tags = array(), $page = 1, $other_args = arra
       $args['tag_mode'] = 'all';
     }
   }
-  
+
   //set per_page to flickr module default if it is not specified in $other_args
   if (!isset($other_args['per_page'])) {
     $args['per_page'] = variable_get('flickr_photos_per_page', 20);
   }
-  
+
   $args = array_merge($args, $other_args);
   $search_response = flickr_request('flickr.photos.search', $args);
- 
+
   if (flickr_error($search_response)) {
     flickr_set_error($search_response);
     return FALSE;
@@ -324,14 +323,14 @@ function flickr_photos_get($nsid, $tags = array(), $page = 1, $other_args = arra
 }
 
 function theme_flickr_photos($uid, $photo_arr){
-  $output = 
+  $output =
     theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
   $output .= "<div class='fickr-photoset'>\n";
   foreach((array)$photo_arr['photos']['photo'] as $photo) {
     $output .= theme('flickr_photo_box', $photo, 'm');
   }
   $output .= '</div>';
-  $output .= 
+  $output .=
     theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
   return $output;
 }
