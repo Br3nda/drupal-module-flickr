@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.18 2007/04/13 22:44:51 drewish Exp $
+// $Id: flickr.inc,v 1.19 2007/04/17 04:53:02 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -288,18 +288,22 @@ function flickr_photoset_get_list($nsid) {
  *   valid nsid or false if none can be found
  */
 function flickr_user_find_by_identifier($identifier) {
-  if (preg_match('/^\d+@N\d+$/', $identifier)) {
+  if (flickr_is_nsid($identifier)) {
     //identifier is an NSID
     return $identifier;
   }
-  if (valid_email_address($identifier) && !flickr_error(($response = flickr_user_find_by_email($identifier)))) {
+  if (valid_email_address($identifier) && !flickr_response_has_error(($response = flickr_user_find_by_email($identifier)))) {
     return $response['user']['nsid'];
   }
-  if (!flickr_error($response = flickr_user_find_by_username($identifier))) {
+  if (!flickr_response_has_error($response = flickr_user_find_by_username($identifier))) {
     return $response['user']['nsid'];
   }
 
   return FALSE;
+}
+
+function flickr_is_nsid($id) {
+  return preg_match('/^\d+@N\d+$/', $id);
 }
 
 /**
@@ -369,6 +373,30 @@ function flickr_tags_get_list_user($nsid){
   );
 }
 
+
+function flickr_photos_search($nsid, $page = 1, $other_args = array()){
+  $args = array (
+    'user_id' => $nsid,
+    'page' => $page,
+  );
+
+  //set per_page to flickr module default if it is not specified in $other_args
+  if (!isset($other_args['per_page'])) {
+    $args['per_page'] = variable_get('flickr_photos_per_page', 20);
+  }
+
+  return flickr_request('flickr.photos.search', array_merge($args, $other_args));
+}
+
+function flickr_tag_request_args($tags = array(), $mode = 'all') {
+  $args = array();
+  if (!empty($tags)) {
+    $args['tags'] = implode(',', $tags);
+    $args['tag_mode'] = $mode == 'all' ? $mode : 'any';
+  }
+  return $args;
+}
+
 /**
  * Check if the response from the Flickr api call was an error
  *
@@ -378,18 +406,13 @@ function flickr_tags_get_list_user($nsid){
  * @return
  *    true if the response is an error message
  */
-function flickr_error($response) {
-  if (array_key_exists('stat', $response) && $response['stat'] == 'ok') {
-    return FALSE;
-  }
-  else {
-    return TRUE;
-  }
+function flickr_response_has_error($response) {
+  return !(array_key_exists('stat', $response) && $response['stat'] == 'ok');
 }
 
 /**
  * Display an error message and write an error to watchdog.
- * Only call this method if flickr_error returns TRUE.
+ * Only call this method if flickr_response_has_error returns TRUE.
  *
  * @param $response
  *   response to display

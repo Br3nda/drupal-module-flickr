@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.32 2007/04/15 05:43:39 drewish Exp $
+// $Id: flickr.module,v 1.33 2007/04/17 04:53:02 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -139,7 +139,7 @@ function flickr_admin_settings_validate($form_id, $form) {
     form_set_error('flickr_api_secret', t('This does not appear to be a Flickr API secret.'));
   }
   if ($uid) {
-    if (preg_match('/^\d+@N\d+$/', $uid)) {
+    if (flickr_is_nsid($uid)) {
       // it's already a uid
     }
     else {
@@ -158,7 +158,7 @@ function flickr_admin_settings_submit($form_id, $form) {
   $form['flickr_default_userid'] = trim($form['flickr_default_userid']);
 
   // ... replace the usernames with a user id ...
-  if (preg_match('/^\d+@N\d+$/', $form['flickr_default_userid']) == 0) {
+  if (!flickr_is_nsid($form['flickr_default_userid'])) {
     $username = $form['flickr_default_userid'];
     $response = flickr_user_find_by_username($username);
     if (isset($response['stat']) && $response['stat'] == 'ok') {
@@ -250,6 +250,10 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
   }
 }
 
+function flickr_get_nsid($uid) {
+  return db_result(db_query('SELECT nsid FROM {flickr_users} WHERE uid=%d', $uid));
+}
+
 function flickr_photos($uid = NULL) {
   drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
 
@@ -276,9 +280,13 @@ function flickr_photos($uid = NULL) {
     }
   }
 
-  $photo_arr = flickr_photos_get($nsid, array(), $pager_page_array[$element]+1);
+  $photo_arr = flickr_photos_search($nsid, $pager_page_array[$element]+1);
 
-  if (empty($photo_arr['photos'])) {
+  if (flickr_response_has_error($photo_arr)) {
+    flickr_set_error($photo_arr);
+    return FALSE;
+  }
+  else if (empty($photo_arr['photos'])) {
     drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid'=> $nsid)));
     return FALSE;
   }
@@ -291,37 +299,6 @@ function flickr_photos($uid = NULL) {
 }
 
 
-function flickr_photos_get($nsid, $tags = array(), $page = 1, $other_args = array()){
-  $args = array (
-    'user_id' => $nsid,
-    'page' => $page,
-  );
-
-  //process tags
-  if (!empty($tags)) {
-    $args['tags'] = implode(',', $tags);
-    //change tag_mode default from any to all
-    if (!isset($other_args['tag_mode'])) {
-      $args['tag_mode'] = 'all';
-    }
-  }
-
-  //set per_page to flickr module default if it is not specified in $other_args
-  if (!isset($other_args['per_page'])) {
-    $args['per_page'] = variable_get('flickr_photos_per_page', 20);
-  }
-
-  $args = array_merge($args, $other_args);
-  $search_response = flickr_request('flickr.photos.search', $args);
-
-  if (flickr_error($search_response)) {
-    flickr_set_error($search_response);
-    return FALSE;
-  }
-
-  return $search_response;
-}
-
 function theme_flickr_photos($uid, $photo_arr){
   $output =
     theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
@@ -333,5 +310,13 @@ function theme_flickr_photos($uid, $photo_arr){
   $output .=
     theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
   return $output;
+}
+
+function theme_flickr_photoset($ps, $owner, $size, $attribs=NULL) {
+  $img = flickr_img($ps, $size, $attribs);
+  $photo_url = flickr_photoset_page_url($owner, $ps['id']);
+  return '<span class="flickr-photoset">'
+    . l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE)
+    . "</span>\n";
 }
 

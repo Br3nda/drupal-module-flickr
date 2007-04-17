@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.7 2007/04/13 16:27:03 drewish Exp $
+// $Id: flickr_block.module,v 1.8 2007/04/17 04:53:02 andrewlevine Exp $
 
 
 /**
@@ -115,20 +115,25 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       $settings['user_id'] = variable_get('flickr_default_userid', '');
     }
 
+    // Get per user nsid if necessary
+    if ($delta < 3) {
+      $user_nsid = flickr_get_nsid(arg(1));
+    }
+
     switch ($delta) {
     case 0:
       $block['subject'] = t('Flickr recent photos by user');
-      $block['content'] = _flickr_block_recent(_flickr_block_get_userid(arg(1)), $settings['show_n'], $settings['size']);
+      $block['content'] = _flickr_block_recent($user_nsid, $settings['show_n'], $settings['size']);
       break;
 
     case 1:
       $block['subject'] = t('Flickr recent photosets');
-      $block['content'] = _flickr_block_photosets(_flickr_block_get_userid(arg(1)), $settings['show_n'], $settings['size']);
+      $block['content'] = _flickr_block_photosets($user_nsid, $settings['show_n'], $settings['size']);
       break;
 
     case 2:
       $block['subject'] = t('Flickr random photos');
-      $block['content'] = _flickr_block_random(_flickr_block_get_userid(arg(1)), $settings['show_n'], $settings['size']);
+      $block['content'] = _flickr_block_random($user_nsid, $settings['show_n'], $settings['size']);
       break;
 
     case 3:
@@ -151,44 +156,27 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function _flickr_block_get_userid($id) {
-  $result = db_fetch_object(db_query('SELECT data FROM {users} WHERE uid = %d', $id));
-  $data = unserialize($result->data);
-  return $data['nsid'];
-}
-
-function _flickr_block_recent($user_id, $show_n, $size) {
-  $result = flickr_request(
-    'flickr.photos.search',
-    array(
-      'user_id' => $user_id,
-      'per_page' => $show_n,
-    )
-  );
+function _flickr_block_recent($nsid, $show_n, $size) {
+  $result = flickr_photos_search($nsid, 1, array('per_page' => $show_n));
   $output = '';
   foreach((array)$result['photos']['photo'] as $photo) {
-    $output .= theme('flickr_photo', $photo, $size);
+    $output .= theme('flickr_block_photo', $photo, $size);
   }
   return $output;
 }
 
-function _flickr_block_photosets($user_id, $show_n, $size) {
+function _flickr_block_photosets($nsid, $show_n, $size) {
+  $result = flickr_photoset_get_list($nsid);
   $output = '';
-  $result = flickr_request('flickr.photosets.getList', array('user_id' => $user_id));
   $to = min($show_n, count($result['photosets']['photoset']));
   for ($i = 0; $i < $to; $i++) {
-    $output .= theme('flickr_photoset', $result['photosets']['photoset'][$i], $user_id, $size);
+    $output .= theme('flickr_block_photoset', $result['photosets']['photoset'][$i], $nsid, $size);
   }
   return $output;
 }
 
-function _flickr_block_random($user_id, $show_n, $size) {
-  $request = array(
-    'user_id' => $user_id,
-    'per_page' => 500,
-    'page' => 1,
-  );
-  $result = flickr_request('flickr.photos.search', $request);
+function _flickr_block_random($nsid, $show_n, $size) {
+  $result = flickr_photos_search($nsid, 1, array('per_page' => 500));
   $page_count = $result['photos']['pages'];
 
   // we shouldn't try to return more than the total number of photos
@@ -197,12 +185,19 @@ function _flickr_block_random($user_id, $show_n, $size) {
   for ($i = 0; $i < $to; $i++) {
     sleep(0.125);
     // request a random page
-    $request['page'] = rand(1, $page_count);
-    $result = flickr_request('flickr.photos.search', $request);
+    $result = flickr_photos_search($nsid, rand(1, $page_count), array('per_page' => 500));
     // then select a random photo
     $index = rand(0, count($result['photos']['photo']));
-    $output .= theme('flickr_photo', $result['photos']['photo'][$index], $size);
+    $output .= theme('flickr_block_photo', $result['photos']['photo'][$index], $size);
   }
 
   return $output;
+}
+
+function theme_flickr_block_photo($p, $size = NULL) {
+  return theme_flickr_photo($p, $size);
+}
+
+function theme_flickr_block_photoset($ps, $owner, $size) {
+  return theme_flickr_photoset($ps, $owner, $size);
 }
