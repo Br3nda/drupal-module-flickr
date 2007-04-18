@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.8 2007/04/17 04:53:02 andrewlevine Exp $
+// $Id: flickr_filter.module,v 1.9 2007/04/18 20:34:59 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -82,12 +82,8 @@ function flickr_filter_callback_photo($matches) {
   list($config, $attribs) = flickr_filter_split_config($matches[1]);
 
   if (isset($config['id'])) {
-    $result = flickr_photo_get_info($config['id']);
-    if (flickr_response_has_error($result)) {
-      drupal_set_message(t('The Flickr filter had a problem: @message', array('@message' => $result['message'])), 'error');
-    }
-    else {
-      return theme('flickr_filter_photo', $result['photo'], $config['size'], $attribs);
+    if ($photo = flickr_photo_get_info($config['id'])) {
+      return theme('flickr_filter_photo', $photo, $config['size'], $attribs);
     }
   }
   return '';
@@ -100,12 +96,8 @@ function flickr_filter_callback_photoset($matches) {
   list($config, $attribs) = flickr_filter_split_config($matches[1]);
 
   if (isset($config['id'])) {
-    $result = flickr_photoset_get_info($config['id']);
-    if (flickr_response_has_error($result)) {
-      drupal_set_message(t('The Flickr filter had a problem: @message', array('@message' => $result['message'])), 'error');
-    }
-    else {
-      return theme('flickr_filter_photoset', $result['photoset'], $result['photoset']['owner'], $config['size'], $attribs);
+    if ($photoset = flickr_photoset_get_info($config['id'])) {
+      return theme('flickr_filter_photoset', $photoset, $photoset['owner'], $config['size'], $attribs);
     }
   }
   return '';
