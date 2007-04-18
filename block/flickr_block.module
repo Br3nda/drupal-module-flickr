@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.8 2007/04/17 04:53:02 andrewlevine Exp $
+// $Id: flickr_block.module,v 1.9 2007/04/18 20:33:39 drewish Exp $
 
 
 /**
@@ -10,9 +10,9 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
   case 'list':
     // User base blocks
-    $blocks[0]['info'] = t('Flickr recent photos by user');
-    $blocks[1]['info'] = t('Flickr photosets by user');
-    $blocks[2]['info'] = t('Flickr random photos by user');
+    $blocks[0]['info'] = t("Flickr user page recent photos");
+    $blocks[1]['info'] = t("Flickr user page photosets");
+    $blocks[2]['info'] = t("Flickr user page random photos");
 
     // Site wide blocks
     $blocks[3]['info'] = t('Flickr recent photos');
@@ -117,80 +117,78 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 
     // Get per user nsid if necessary
     if ($delta < 3) {
-      $user_nsid = flickr_get_nsid(arg(1));
+      if (arg(0) == 'user' && ($uid = (int) arg(1))) {
+        if ($user = user_load(array('uid' => $uid))) {
+          if ($user->flickr['nsid']) {
+            if ($delta == 0) {
+              $block['subject'] = t("%username's recent Flickr photos", array('%username' => $user->name));
+              $block['content'] = _flickr_block_recent($user->flickr['nsid'], $settings['show_n'], $settings['size']);
+            }
+            elseif ($delta == 1) {
+              $block['subject'] = t("%username's recent Flickr photosets", array('%username' => $user->name));
+              $block['content'] = _flickr_block_photosets($user->flickr['nsid'], $settings['show_n'], $settings['size']);
+            }
+            elseif ($delta == 2) {
+              $block['subject'] = t("%username's random Flickr photos", array('%username' => $user->name));
+              $block['content'] = _flickr_block_random($user->flickr['nsid'], $settings['show_n'], $settings['size']);
+            }
+          }
+        }
+      }
     }
-
-    switch ($delta) {
-    case 0:
-      $block['subject'] = t('Flickr recent photos by user');
-      $block['content'] = _flickr_block_recent($user_nsid, $settings['show_n'], $settings['size']);
-      break;
-
-    case 1:
-      $block['subject'] = t('Flickr recent photosets');
-      $block['content'] = _flickr_block_photosets($user_nsid, $settings['show_n'], $settings['size']);
-      break;
-
-    case 2:
-      $block['subject'] = t('Flickr random photos');
-      $block['content'] = _flickr_block_random($user_nsid, $settings['show_n'], $settings['size']);
-      break;
-
-    case 3:
+    elseif ($delta == 3) {
       $block['subject'] = t('Flickr recent photos');
       $block['content'] = _flickr_block_recent($settings['user_id'], $settings['show_n'], $settings['size']);
-      break;
-
-    case 4:
+    }
+    elseif ($delta == 4) {
       $block['subject'] = t('Flickr recent photosets');
       $block['content'] = _flickr_block_photosets($settings['user_id'], $settings['show_n'], $settings['size']);
-      break;
-
-    case 5:
+    }
+    elseif ($delta == 5) {
       $block['subject'] = t('Flickr random photos');
       $block['content'] = _flickr_block_random($settings['user_id'], $settings['show_n'], $settings['size']);
-      break;
     }
-
     return $block;
   }
 }
 
 function _flickr_block_recent($nsid, $show_n, $size) {
-  $result = flickr_photos_search($nsid, 1, array('per_page' => $show_n));
   $output = '';
-  foreach((array)$result['photos']['photo'] as $photo) {
-    $output .= theme('flickr_block_photo', $photo, $size);
+  if ($photos = flickr_photos_search($nsid, 1, array('per_page' => $show_n))) {
+    foreach($photos['photo'] as $photo) {
+      $output .= theme('flickr_block_photo', $photo, $size);
+    }
   }
   return $output;
 }
 
 function _flickr_block_photosets($nsid, $show_n, $size) {
-  $result = flickr_photoset_get_list($nsid);
+  $photosets = flickr_photoset_get_list($nsid);
   $output = '';
-  $to = min($show_n, count($result['photosets']['photoset']));
+  $to = min($show_n, count($photosets));
   for ($i = 0; $i < $to; $i++) {
-    $output .= theme('flickr_block_photoset', $result['photosets']['photoset'][$i], $nsid, $size);
+    $output .= theme('flickr_block_photoset', $photosets[$i], $nsid, $size);
   }
   return $output;
 }
 
 function _flickr_block_random($nsid, $show_n, $size) {
-  $result = flickr_photos_search($nsid, 1, array('per_page' => 500));
-  $page_count = $result['photos']['pages'];
-
-  // we shouldn't try to return more than the total number of photos
-  $to = min($show_n, $result['photos']['total']);
   $output = '';
-  for ($i = 0; $i < $to; $i++) {
-    sleep(0.125);
-    // request a random page
-    $result = flickr_photos_search($nsid, rand(1, $page_count), array('per_page' => 500));
-    // then select a random photo
-    $index = rand(0, count($result['photos']['photo']));
-    $output .= theme('flickr_block_photo', $result['photos']['photo'][$index], $size);
-  }
+  if ($photos = flickr_photos_search($nsid, 1, array('per_page' => 500))) {
+    $page_count = $photos['pages'];
 
+    // we shouldn't try to return more than the total number of photos
+    $to = min($show_n, $photos['total']);
+    $output = '';
+    for ($i = 0; $i < $to; $i++) {
+      sleep(0.125);
+      // request a random page
+      $photos = flickr_photos_search($nsid, rand(1, $page_count), array('per_page' => 500));
+      // then select a random photo
+      $index = rand(0, count($photos['photo']));
+      $output .= theme('flickr_block_photo', $photos['photo'][$index], $size);
+    }
+  }
   return $output;
 }
 
