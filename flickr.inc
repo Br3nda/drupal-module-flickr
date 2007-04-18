@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.19 2007/04/17 04:53:02 andrewlevine Exp $
+// $Id: flickr.inc,v 1.20 2007/04/18 20:30:44 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -47,11 +47,13 @@ function flickr_photo_sizes() {
  *   associative array of arguments names and values
  * @param $cacheable
  *   boolean indicating if it's safe cache the results of this request
+ * @param $return_errors
+ *   boolean indicating if the caller will handle displaying error messages
  *
  * @return
- *   an array with the the result of the request
+ *   an array with the the result of the request, or FALSE on error.
  */
-function flickr_request($method, $args, $cacheable = TRUE) {
+function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALSE) {
   $args['api_key'] = trim(variable_get('flickr_api_key', ''));
   $args['method'] = $method;
   $args['format'] = 'php_serial';
@@ -80,20 +82,48 @@ function flickr_request($method, $args, $cacheable = TRUE) {
     }
   }
 
-  // connect and fetch a value
+  // Attempt to connect and fetch a result
   $result = drupal_http_request($url);
-  if ($result->code == 200) {
-    // make sure it unserializes
-    if ($array = unserialize($result->data)) {
-      // save a cacheable result for future use
-      if ($cacheable) {
-        cache_set($arghash, 'cache', $result->data, time() + 3600);
-      }
-      return $array;
+  if ($result->code != 200) {
+    if ($return_errors) {
+      return array(
+        'stat' => 'error',
+        'code' => $result->code,
+        'message' => 'HTTP Error: '. $result->error,
+      );
     }
+    flickr_set_error(t("Could not connect to Flickr, HTTP error @error", array('@error' => $result->code)));
+    return FALSE;
   }
 
-  return FALSE;
+  // Make sure it unserializes
+  $response = unserialize($result->data);
+  if (!$response) {
+    if ($return_errors) {
+      return array(
+        'stat' => 'error',
+        'code' => '-1',
+        'message' => 'The response was corrupted, it could not be unserialized.',
+      );
+    }
+    flickr_set_error(t("Flickr's response was corrupted and could not be unserialized."));
+    return FALSE;
+  }
+
+  // Check that the request was successful
+  if (flickr_response_has_error($response)) {
+    if ($return_errors) {
+      return $response;
+    }
+    flickr_set_error($response);
+    return FALSE;
+  }
+
+  // Save cacheable results for future use
+  if ($cacheable) {
+    cache_set($arghash, 'cache', $result->data, time() + 3600);
+  }
+  return $response;
 }
 
 /**
@@ -138,17 +168,17 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
     $img_url = flickr_photo_img($photo, $size);
   }
   else {
-    $response = flickr_photo_get_sizes($id);
-    if ($response) {
-      foreach ($response['sizes']['size'] as $imagesize) {
-        if ($imagesize['label'] == $sizes[$size]['label']) {
+    $images_sizes = flickr_photo_get_sizes($id);
+    if ($image_sizes) {
+      foreach ($image_sizes as $image_size) {
+        if ($image_size['label'] == $sizes[$size]['label']) {
           break;
         }
       }
-      if (isset($imagesize)) {
-        $img_url = $imagesize['source'];
-        $attributes['height'] = $imagesize['height'];
-        $attributes['width'] = $imagesize['width'];
+      if (isset($image_size)) {
+        $img_url = $image_size['source'];
+        $attributes['height'] = $image_size['height'];
+        $attributes['width'] = $image_size['width'];
       }
     }
     else {
@@ -221,10 +251,14 @@ function flickr_photoset_page_url($owner, $id = NULL) {
  *   (http://www.flickr.com/services/api/flickr.photos.getInfo.html)
  */
 function flickr_photo_get_info($photo_id) {
-  return flickr_request(
+  $response = flickr_request(
     'flickr.photos.getInfo',
     array('photo_id' => $photo_id)
   );
+  if ($response) {
+    return $response['photo'];
+  }
+  return FALSE;
 }
 
 /**
@@ -236,10 +270,14 @@ function flickr_photo_get_info($photo_id) {
  *   (http://www.flickr.com/services/api/flickr.photos.getSizes.html)
  */
 function flickr_photo_get_sizes($photo_id) {
-  return flickr_request(
+  $response = flickr_request(
     'flickr.photos.getSizes',
     array('photo_id' => $photo_id)
   );
+  if ($response) {
+    return $response['sizes']['size'];
+  }
+  return FALSE;
 }
 
 /**
@@ -251,10 +289,14 @@ function flickr_photo_get_sizes($photo_id) {
  *   (http://www.flickr.com/services/api/flickr.photosets.getInfo.html)
  */
 function flickr_photoset_get_info($photoset_id) {
-  return flickr_request(
+  $response = flickr_request(
     'flickr.photosets.getInfo',
     array('photoset_id' => $photoset_id)
   );
+  if ($response) {
+    return $response['photoset'];
+  }
+  return FALSE;
 }
 
 /**
@@ -266,7 +308,14 @@ function flickr_photoset_get_info($photoset_id) {
  *   (http://www.flickr.com/services/api/flickr.photosets.getList.html)
  */
 function flickr_photoset_get_list($nsid) {
-  return flickr_request('flickr.photosets.getList', array('user_id' => $nsid));
+  $response = flickr_request(
+    'flickr.photosets.getList',
+    array('user_id' => $nsid)
+  );
+  if ($response) {
+    return $response['photosets']['photoset'];
+  }
+  return FALSE;
 }
 
 /**
@@ -292,11 +341,11 @@ function flickr_user_find_by_identifier($identifier) {
     //identifier is an NSID
     return $identifier;
   }
-  if (valid_email_address($identifier) && !flickr_response_has_error(($response = flickr_user_find_by_email($identifier)))) {
-    return $response['user']['nsid'];
+  if (valid_email_address($identifier) && ($user = flickr_user_find_by_email($identifier))) {
+    return $user['nsid'];
   }
-  if (!flickr_response_has_error($response = flickr_user_find_by_username($identifier))) {
-    return $response['user']['nsid'];
+  if ($user = flickr_user_find_by_username($identifier)) {
+    return $user['nsid'];
   }
 
   return FALSE;
@@ -321,6 +370,10 @@ function flickr_user_find_by_username($username) {
     'flickr.people.findByUsername',
     array('username' => $username)
   );
+  if ($response) {
+    return $response['user'];
+  }
+  return FALSE;
 }
 
 /**
@@ -334,10 +387,14 @@ function flickr_user_find_by_username($username) {
  *   (http://www.flickr.com/services/api/flickr.people.findByEmail.html)
  */
 function flickr_user_find_by_email($email) {
-  return $response = flickr_request(
+  $response = flickr_request(
     'flickr.people.findByEmail',
     array('find_email' => $email)
   );
+  if ($response) {
+    return $response['user'];
+  }
+  return FALSE;
 }
 
 /**
@@ -355,7 +412,8 @@ function flickr_tags_get_list_user_popular($nsid, $count=NULL) {
   if ($count != NULL) {
     $args['count'] = $count;
   }
-  return flickr_request('flickr.tags.getListUserPopular', $args);
+  $response = flickr_request('flickr.tags.getListUserPopular', $args);
+  return $response;
 }
 
 /**
@@ -367,10 +425,11 @@ function flickr_tags_get_list_user_popular($nsid, $count=NULL) {
  *   (http://www.flickr.com/services/api/flickr.tags.getListUser.html)
  */
 function flickr_tags_get_list_user($nsid){
-  return $response = flickr_request(
+  $response = flickr_request(
     'flickr.tags.getListUser',
     array('user_id' => $nsid)
   );
+  return $response;
 }
 
 
@@ -385,7 +444,11 @@ function flickr_photos_search($nsid, $page = 1, $other_args = array()){
     $args['per_page'] = variable_get('flickr_photos_per_page', 20);
   }
 
-  return flickr_request('flickr.photos.search', array_merge($args, $other_args));
+  $response = flickr_request('flickr.photos.search', array_merge($args, $other_args));
+  if ($response) {
+    return $response['photos'];
+  }
+  return FALSE;
 }
 
 function flickr_tag_request_args($tags = array(), $mode = 'all') {
@@ -407,20 +470,29 @@ function flickr_tag_request_args($tags = array(), $mode = 'all') {
  *    true if the response is an error message
  */
 function flickr_response_has_error($response) {
-  return !(array_key_exists('stat', $response) && $response['stat'] == 'ok');
+  return !(isset($response['stat']) && $response['stat'] == 'ok');
 }
 
 /**
- * Display an error message and write an error to watchdog.
- * Only call this method if flickr_response_has_error returns TRUE.
+ * Display an error message to flickr administrators and write an error to
+ * watchdog.
  *
- * @param $response
- *   response to display
+ * @param $mesageOrResposne
+ *   message or error response to display
  */
-function flickr_set_error($response) {
-  $err_message = t('Flickr error @error_id: %flickr_error', array('@error_id'=>$response['code'],
-        '%flickr_error'=> $response['message']));
-  drupal_set_message($err_message, 'error');
-  watchdog('flickr', $err_message, WATCHDOG_WARNING);
-}
+function flickr_set_error($messageOrResponse) {
+  if (is_array($messageOrResponse)) {
+    $message = t('Flickr error @error_id: %flickr_error', array(
+      '@error_id' => $messageOrResponse['code'],
+      '%flickr_error'=> $messageOrResponse['message'],
+    ));
+  }
+  else {
+    $message = $messageOrResponse;
+  }
 
+  if (user_access('administer flickr')) {
+    drupal_set_message($message, 'error');
+  }
+  watchdog('flickr', $message, WATCHDOG_WARNING);
+}

@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.33 2007/04/17 04:53:02 andrewlevine Exp $
+// $Id: flickr.module,v 1.34 2007/04/18 20:30:44 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -143,8 +143,8 @@ function flickr_admin_settings_validate($form_id, $form) {
       // it's already a uid
     }
     else {
-      $response = flickr_user_find_by_username($uid);
-      if (!isset($response['stat']) || $response['stat'] != 'ok') {
+      $user = flickr_user_find_by_username($uid);
+      if (!$user) {
         form_set_error('flickr_default_userid', t('%uid is not a Flickr user id and it does not appear to be a valid user name. Flickr reported %error-message', array('%uid' => $uid, '%error-message' => $response['message'])));
       }
     }
@@ -160,10 +160,9 @@ function flickr_admin_settings_submit($form_id, $form) {
   // ... replace the usernames with a user id ...
   if (!flickr_is_nsid($form['flickr_default_userid'])) {
     $username = $form['flickr_default_userid'];
-    $response = flickr_user_find_by_username($username);
-    if (isset($response['stat']) && $response['stat'] == 'ok') {
-      drupal_set_message(t("The Flickr username %username has been replaced with the corresponding user id %uid.", array('%username' => $form['flickr_default_userid'], '%uid' => $response['user']['id'])));
-      $form['flickr_default_userid'] = $response['user']['id'];
+    if ($user = flickr_user_find_by_username($username)) {
+      drupal_set_message(t("The Flickr username %username has been replaced with the corresponding user id %uid.", array('%username' => $form['flickr_default_userid'], '%uid' => $user['id'])));
+      $form['flickr_default_userid'] = $user['id'];
     }
   }
 
@@ -197,30 +196,30 @@ function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NUL
  * Add an extra field for the user to enter his flickr identifier.
  */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'form' && $category == 'account') {
-    $user = user_load(array('uid' => $account->uid));
-    $form['flickr'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Flickr settings'),
-      '#collapsible' => FALSE,
-      '#weight' => 4,
-    );
-    $form['flickr']['flickr_identifier'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Flickr identifier'),
-      '#default_value' => $user->flickr['identifier'] ? $user->flickr['identifier'] : '',
-      '#description' => t('Enter either your Flickr username, the email address associated with your Flickr account, or your Flickr NSID. Leave this box empty to delete your Flickr page on this site.'),
-      '#maxlength' => 64,
-    );
-    return $form;
+  if ($op == 'form') {
+    if ($category == 'account') {
+      $user = user_load(array('uid' => $account->uid));
+      $form['flickr'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Flickr settings'),
+        '#collapsible' => FALSE,
+        '#weight' => 4,
+        '#tree' => FALSE,
+      );
+      $form['flickr']['flickr_identifier'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Flickr identifier'),
+        '#default_value' => $user->flickr['identifier'],
+        '#description' => t('Enter either your Flickr username, the email address associated with your Flickr account, or your Flickr NSID. Leave this box empty to delete your Flickr page on this site.'),
+        '#maxlength' => 64,
+      );
+      return $form;
+    }
   }
   elseif ($op == 'validate') {
     if (!empty($edit['flickr_identifier'])) {
-      if (($nsid = flickr_user_find_by_identifier($edit['flickr_identifier'])) === FALSE) {
+      if (!flickr_user_find_by_identifier($edit['flickr_identifier'])) {
         form_set_error('flickr_identifier', t('%ident is not a valid Flickr username, email, or NSID.', array('%ident' => $edit['flickr_identifier'])));
-      }
-      else {
-        $account->flickr['nsid'] = $nsid;
       }
     }
   }
@@ -228,14 +227,14 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
     if (isset($edit['flickr_identifier'])) {
       db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
       if (!empty($edit['flickr_identifier'])) {
-        db_query('INSERT INTO {flickr_users} (uid, nsid, identifier) VALUES (%d, \'%s\', \'%s\')', $account->uid, $account->flickr['nsid'], $edit['flickr_identifier']);
+        db_query("INSERT INTO {flickr_users} (uid, nsid, identifier) VALUES (%d, '%s', '%s')", $account->uid, flickr_user_find_by_identifier($edit['flickr_identifier']), $edit['flickr_identifier']);
       }
       else {
         //flickr account deleted
         drupal_set_message(t('%username\'s Flickr page has been deleted.', array('%username'=> $account->name)));
       }
     }
-    unset($account->flickr);
+    $edit['flickr_identifier'] = NULL;
   }
   elseif ($op == 'load') {
     $result = db_query('SELECT * FROM {flickr_users} WHERE uid=%d', $account->uid);
@@ -248,10 +247,6 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
   elseif ($op == 'delete') {
     db_query('DELETE FROM {flickr_users} WHERE uid=%d', $account->uid);
   }
-}
-
-function flickr_get_nsid($uid) {
-  return db_result(db_query('SELECT nsid FROM {flickr_users} WHERE uid=%d', $uid));
 }
 
 function flickr_photos($uid = NULL) {
@@ -280,22 +275,17 @@ function flickr_photos($uid = NULL) {
     }
   }
 
-  $photo_arr = flickr_photos_search($nsid, $pager_page_array[$element]+1);
-
-  if (flickr_response_has_error($photo_arr)) {
-    flickr_set_error($photo_arr);
-    return FALSE;
-  }
-  else if (empty($photo_arr['photos'])) {
-    drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid'=> $nsid)));
+  $photos = flickr_photos_search($nsid, $pager_page_array[$element]+1);
+  if (!$photos) {
+    drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid' => $nsid)));
     return FALSE;
   }
 
   //set pager information we just acquired
-  $pager_total[$element] = $photo_arr['photos']['pages'];
-  $pager_total_items[$element] = $photo_arr['photos']['total'];
+  $pager_total[$element] = $photos['pages'];
+  $pager_total_items[$element] = $photos['total'];
 
-  return theme('flickr_photos', $uid, $photo_arr);
+  return theme('flickr_photos', $uid, $photos);
 }
 
 
