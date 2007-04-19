@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.20 2007/04/18 20:30:44 drewish Exp $
+// $Id: flickr.inc,v 1.21 2007/04/19 00:15:44 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -224,8 +224,13 @@ function flickr_photo_img($photo, $size = NULL, $format = NULL) {
  *   url for the flickr photo page showing photo with $id of $owner
  */
 function flickr_photo_page_url($owner, $id = NULL) {
-  $owner = is_array($owner) ? $owner['nsid']: $owner;
-  return 'http://flickr.com/photos/'. $owner . ($id ? '/'. $id : '');
+  $nsid = is_array($owner) ? $owner['nsid']: $owner;
+  if ($person = flickr_people_get_info($nsid)) {
+    return $person['photosurl']['_content'] . $id;
+  }
+  else {
+    return "http://flickr.com/photos/$nsid/$id";
+  }
 }
 
 /**
@@ -238,8 +243,13 @@ function flickr_photo_page_url($owner, $id = NULL) {
  *   url for the photoset page of photoset $id of owner $owner
  */
 function flickr_photoset_page_url($owner, $id = NULL) {
-  $owner = is_array($owner) ? $owner['nsid']: $owner;
-  return "http://flickr.com/photos/$owner/sets/$id";
+  $nsid = is_array($owner) ? $owner['nsid']: $owner;
+  if ($person = flickr_people_get_info($nsid)) {
+    return $person['photosurl']['_content'] . $id;
+  }
+  else {
+    return "http://flickr.com/photos/$nsid/sets/$id";
+  }
 }
 
 /**
@@ -314,6 +324,25 @@ function flickr_photoset_get_list($nsid) {
   );
   if ($response) {
     return $response['photosets']['photoset'];
+  }
+  return FALSE;
+}
+
+/**
+ * @param $nsid The Flickr user's NSID
+ *
+ * @return
+ *   array with person's info from flickr.people.getInfo
+ *   (http://www.flickr.com/services/api/flickr.people.getInfo.html)
+ *   or FALSE on error.
+ */
+function flickr_people_get_info($nisd) {
+  $response = flickr_request(
+    'flickr.people.getInfo',
+    array('user_id' => $nisd)
+  );
+  if ($response) {
+    return $response['person'];
   }
   return FALSE;
 }
