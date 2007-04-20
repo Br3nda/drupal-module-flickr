@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.21 2007/04/19 00:15:44 drewish Exp $
+// $Id: flickr.inc,v 1.22 2007/04/20 18:35:32 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -395,7 +395,7 @@ function flickr_is_nsid($id) {
  *   (http://www.flickr.com/services/api/flickr.people.findByUsername.html)
  */
 function flickr_user_find_by_username($username) {
-  return flickr_request(
+  $response = flickr_request(
     'flickr.people.findByUsername',
     array('username' => $username)
   );
