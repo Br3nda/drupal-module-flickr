@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.23 2007/04/21 02:19:58 drewish Exp $
+// $Id: flickr.inc,v 1.24 2007/04/21 04:43:40 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -170,7 +170,7 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
     $img_url = flickr_photo_img($photo, $size);
   }
   else {
-    $images_sizes = flickr_photo_get_sizes($id);
+    $image_sizes = flickr_photo_get_sizes($id);
     if ($image_sizes) {
       foreach ($image_sizes as $image_size) {
         if ($image_size['label'] == $sizes[$size]['label']) {
@@ -444,7 +444,10 @@ function flickr_tags_get_list_user_popular($nsid, $count=NULL) {
     $args['count'] = $count;
   }
   $response = flickr_request('flickr.tags.getListUserPopular', $args);
-  return $response;
+  if ($response) {
+    return $response['who']['tags']['tag'];
+  }
+  return FALSE;
 }
 
 /**
@@ -460,7 +463,10 @@ function flickr_tags_get_list_user($nsid){
     'flickr.tags.getListUser',
     array('user_id' => $nsid)
   );
-  return $response;
+  if ($response) {
+    return $response['who']['tags']['tag'];
+  }
+  return FALSE;
 }
 
 
