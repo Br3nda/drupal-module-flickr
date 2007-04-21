@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.35 2007/04/18 23:40:43 drewish Exp $
+// $Id: flickr.module,v 1.36 2007/04/21 05:44:54 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -116,6 +116,15 @@ function flickr_admin_settings() {
     '#title' => t('Default Flickr User Id'),
     '#default_value' => variable_get('flickr_default_userid', ''),
     '#description' => t("An, optional, default Flickr username or user id. This will be used when no user is specified."),
+  );
+  $times = array(900, 1800, 2700, 3600, 7200, 10800, 14400, 18000, 21600, 43200, 86400);
+  $ageoptions = drupal_map_assoc($times, 'format_interval');
+  $form['flickr_cache_duration'] = array(
+    '#type' => 'select',
+    '#title' => t('Cache for'),
+    '#options' => $ageoptions,
+    '#default_value' => variable_get('flickr_cache_duration', 3600),
+    '#description' => t("Results from Flickr API requests will be cached for at least this long."),
   );
 
   // we need an api key before we can verify usernames
