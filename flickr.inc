@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.22 2007/04/20 18:35:32 drewish Exp $
+// $Id: flickr.inc,v 1.23 2007/04/21 02:19:58 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -54,35 +54,36 @@ function flickr_photo_sizes() {
  *   an array with the the result of the request, or FALSE on error.
  */
 function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALSE) {
+  // Add in additional parameters then sort them for signing.
   $args['api_key'] = trim(variable_get('flickr_api_key', ''));
   $args['method'] = $method;
   $args['format'] = 'php_serial';
   ksort($args);
 
-  // build an argument hash that we'll use for the cache id and api signing
-  $arghash = '';
-  foreach($args as $k => $v){
-    $arghash .= $k . $v;
+  // Build an argument hash API signing (we'll also use it for the cache id)
+  $arg_hash = '';
+  foreach ($args as $k => $v) {
+    $arg_hash .= $k . $v;
   }
-  // if we've got a secret sign the arguments
+  // If we've got a secret, sign the arguments.
   if ($secret = trim(variable_get('flickr_api_secret', ''))) {
-    $args['api_sig'] = md5($secret . $arghash);
+    $args['api_sig'] = md5($secret . $arg_hash);
   }
 
-  // build the url
+  // Build the URL.
   foreach ($args as $k => $v){
-    $encoded_params[] = urlencode($k).'='.urlencode($v);
+    $encoded_params[] = urlencode($k) .'='. urlencode($v);
   }
   $url = FLICKR_REST_ENDPOINT .'?'. implode('&', $encoded_params);
 
-  // if it's a cachable request, try to load a cached value
+  // If it's a cachable request, try to load a cached value.
   if ($cacheable) {
-    if ($cache = cache_get($arghash, 'cache')) {
+    if ($cache = cache_get($arg_hash, 'cache')) {
       return unserialize($cache->data);
     }
   }
 
-  // Attempt to connect and fetch a result
+  // If a cached value wasn't suitable, attempt to connect and fetch a result.
   $result = drupal_http_request($url);
   if ($result->code != 200) {
     if ($return_errors) {
@@ -96,7 +97,7 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
     return FALSE;
   }
 
-  // Make sure it unserializes
+  // Make sure it unserializes.
   $response = unserialize($result->data);
   if (!$response) {
     if ($return_errors) {
@@ -110,7 +111,7 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
     return FALSE;
   }
 
-  // Check that the request was successful
+  // Check that the request was successful.
   if (flickr_response_has_error($response)) {
     if ($return_errors) {
       return $response;
@@ -119,10 +120,11 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
     return FALSE;
   }
 
-  // Save cacheable results for future use
+  // Save cacheable results for future use.
   if ($cacheable) {
-    cache_set($arghash, 'cache', $result->data, time() + 3600);
+    cache_set($arg_hash, 'cache', $result->data, time() + 3600);
   }
+
   return $response;
 }
 
