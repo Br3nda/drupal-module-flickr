@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.36 2007/04/21 05:44:54 andrewlevine Exp $
+// $Id: flickr.module,v 1.37 2007/04/23 06:59:05 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -182,7 +182,8 @@ function flickr_admin_settings_submit($form_id, $form) {
 function theme_flickr_photo($p, $size = NULL, $format = NULL, $attribs = NULL) {
   $img = flickr_img($p, $size, $attribs);
   $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
-  return l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE);
+  $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
+  return l($img, $photo_url, array('title' => $title), NULL, NULL, TRUE, TRUE);
 }
 
 function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NULL) {
@@ -312,8 +313,7 @@ function theme_flickr_photos($uid, $photos){
 function theme_flickr_photoset($ps, $owner, $size, $attribs = NULL) {
   $img = flickr_img($ps, $size, $attribs);
   $photo_url = flickr_photoset_page_url($owner, $ps['id']);
-  return '<span class="flickr-photoset">'
-    . l($img, $photo_url, NULL, NULL, NULL, TRUE, TRUE)
-    . "</span>\n";
+  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
+  return l($img, $photo_url, array('title' => $title), NULL, NULL, TRUE, TRUE);
 }
 
