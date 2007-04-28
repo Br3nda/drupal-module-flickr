@@ -1,6 +1,0 @@
-; $Id: flickr_block.info,v 1.2 2007/01/02 18:02:11 drewish Exp $
-name = Flickr Block
-description = Flickr Block for inserting photos into content.
-version = "$Name:  $"
-dependencies = flickr
-package = Flickr
