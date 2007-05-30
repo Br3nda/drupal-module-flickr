@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.25.2.1 2007/05/25 16:34:01 drewish Exp $
+// $Id: flickr.inc,v 1.25.2.2 2007/05/30 15:28:49 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -79,7 +79,10 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
   // If it's a cachable request, try to load a cached value.
   if ($cacheable) {
     if ($cache = cache_get("flickr_$arg_hash", 'cache')) {
-      return unserialize($cache->data);
+      // Check that the value is still "fresh".
+      if( $cache->expire > time() ) {
+        return unserialize($cache->data);
+      }
     }
   }
 
