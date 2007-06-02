@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.25.2.2 2007/05/30 15:28:49 drewish Exp $
+// $Id: flickr.inc,v 1.25.2.3 2007/06/02 04:46:58 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -187,10 +187,10 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
       }
     }
     else {
-      $img_url = flickr_photo_img($photo, $size, $format);
+      $img_url = flickr_photo_img($photo, $size);
     }
   }
-  $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
+  $title = is_array($photo['title']) ? $photo['title']['_content'] : $photo['title'];
   return theme('image', $img_url, $title, $title, $attributes, FALSE);
 }
 

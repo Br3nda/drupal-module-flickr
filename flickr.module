@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.37.2.1 2007/05/30 15:28:49 drewish Exp $
+// $Id: flickr.module,v 1.37.2.2 2007/06/02 04:46:58 andrewlevine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -154,7 +154,7 @@ function flickr_admin_settings_validate($form_id, $form) {
     else {
       $user = flickr_user_find_by_username($uid);
       if (!$user) {
-        form_set_error('flickr_default_userid', t('%uid is not a Flickr user id and it does not appear to be a valid user name. Flickr reported %error-message', array('%uid' => $uid, '%error-message' => $response['message'])));
+        form_set_error('flickr_default_userid', t('%uid is not a Flickr user id and it does not appear to be a valid user name.', array('%uid' => $uid)));
       }
     }
   }
