@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.25.2.3 2007/06/02 04:46:58 andrewlevine Exp $
+// $Id: flickr.inc,v 1.25.2.4 2007/06/12 23:48:03 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -92,11 +92,13 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
     if ($return_errors) {
       return array(
         'stat' => 'error',
+        //In Drupal <= 5.1, only HTTP errors are stored in $result->code correctly, not TCP/IP errors.
+        //We can not count on this variable being correct until this module requires Drupal 5.2 or above.
         'code' => $result->code,
-        'message' => 'HTTP Error: '. $result->error,
+        'message' => $result->error,
       );
     }
-    flickr_set_error(t("Could not connect to Flickr, HTTP error @error", array('@error' => $result->code)));
+    flickr_set_error(t("Could not connect to Flickr, Error: @error", array('@error' => $result->error)));
     return FALSE;
   }
 
