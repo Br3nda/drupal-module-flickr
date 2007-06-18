@@ -1,6 +1,5 @@
-; $Id: flickr_sets.info,v 1.6.2.2 2007/05/10 05:29:34 andrewlevine Exp $
+; $Id: flickr_sets.info,v 1.6.2.3 2007/06/18 23:06:44 dww Exp $
 name = Flickr sets
 description = Add photoset capability to Flickr module
-version = "$Name:  $"
 dependencies = flickr
 package = Flickr

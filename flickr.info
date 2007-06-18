@@ -1,0 +1,4 @@
+; $Id: flickr.info,v 1.4.2.1 2007/06/18 23:06:43 dww Exp $
+name = Flickr
+description = Flickr and Drupal integration.
+package = Flickr
