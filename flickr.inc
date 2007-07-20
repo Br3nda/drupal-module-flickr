@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.25.2.4 2007/06/12 23:48:03 andrewlevine Exp $
+// $Id: flickr.inc,v 1.25.2.5 2007/07/20 18:22:22 andrewlevine Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -163,11 +163,11 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
   // photoset's use primary instead of id to specify the image.
   if (isset($photo['primary'])) {
     $id = $photo['primary'];
-    $attributes['class'] .= ' flickr-photoset-img';
+    $attributes['class'] = implode(' ', array($attributes['class'], 'flickr-photoset-img'));
   }
   else {
     $id = $photo['id'];
-    $attributes['class'] .= ' flickr-photo-img';
+    $attributes['class'] = implode(' ', array($attributes['class'], 'flickr-photo-img'));
   }
 
   if ($size == 's') {
