@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.37.2.2 2007/06/02 04:46:58 andrewlevine Exp $
+// $Id: flickr.module,v 1.37.2.3 2007/08/27 23:08:40 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -16,7 +16,10 @@ function flickr_help($section) {
   }
 }
 
-function flickr_perm () {
+/**
+ * Implementation of hook_perm().
+ */
+function flickr_perm() {
   return array(
     'view own flickr photos',
     'view all flickr photos',
@@ -68,7 +71,7 @@ function flickr_menu($may_cache) {
 
         //main flickr user page(photos)
         $items[] = array(
-          'path' => 'flickr/' . arg(1),
+          'path' => 'flickr/'. arg(1),
           'title' => t("@user's Flickr", array('@user' => $account->name)),
           'type' => MENU_CALLBACK,
           'callback' => 'flickr_photos',
@@ -84,7 +87,7 @@ function flickr_menu($may_cache) {
         );
       }
       elseif ($account !== FALSE && !isset($account->flickr['nsid'])) {
-        drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
+        drupal_set_message(t('%user does not have a Flickr account', array('%user' => $account->name)), 'error');
       }
     }
   }
@@ -241,7 +244,7 @@ function flickr_user($op, &$edit, &$account, $category = NULL) {
       }
       else {
         //flickr account deleted
-        drupal_set_message(t('%username\'s Flickr page has been deleted.', array('%username'=> $account->name)));
+        drupal_set_message(t("%username's Flickr page has been deleted.", array('%username' => $account->name)));
       }
     }
     $edit['flickr_identifier'] = NULL;
@@ -280,7 +283,7 @@ function flickr_photos($uid = NULL) {
       $nsid = $account->flickr['nsid'];
     }
     else {
-      drupal_set_message(t('%user does not have a Flickr account', array('%user'=>$account->name)), 'error');
+      drupal_set_message(t('%user does not have a Flickr account', array('%user' => $account->name)), 'error');
       return FALSE;
     }
   }
@@ -299,10 +302,10 @@ function flickr_photos($uid = NULL) {
 }
 
 
-function theme_flickr_photos($uid, $photos){
+function theme_flickr_photos($uid, $photos) {
   $output = theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
   $output .= "<div class='fickr-photoset'>\n";
-  foreach($photos['photo'] as $photo) {
+  foreach ($photos['photo'] as $photo) {
     $output .= theme('flickr_photo_box', $photo, 'm');
   }
   $output .= '</div>';

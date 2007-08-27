@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.9.2.1 2007/06/09 18:56:44 drewish Exp $
+// $Id: flickr_block.module,v 1.9.2.2 2007/08/27 23:08:40 drewish Exp $
 
 
 /**
@@ -155,7 +155,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
 function _flickr_block_recent($nsid, $show_n, $size) {
   $output = '';
   if ($photos = flickr_photos_search($nsid, 1, array('per_page' => $show_n))) {
-    foreach($photos['photo'] as $photo) {
+    foreach ($photos['photo'] as $photo) {
       $output .= theme('flickr_block_photo', $photo, $size);
     }
   }

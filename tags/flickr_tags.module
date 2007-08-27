@@ -1,6 +1,6 @@
 <?php
 
-//$Id: flickr_tags.module,v 1.1.2.1 2007/07/20 19:25:59 andrewlevine Exp $
+//$Id: flickr_tags.module,v 1.1.2.2 2007/08/27 23:08:40 drewish Exp $
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
 /**
@@ -49,10 +49,10 @@ function flickr_tags_menu($may_cache) {
           'access' => $view_access,
         );
         //flickr specific tag page
-        if ( (arg(3)!==NULL) && (arg(3)!='cloud') && (arg(3)!='list') ){
+        if (arg(3) !== NULL && arg(3) != 'cloud' && arg(3) != 'list') {
             $items[] = array(
-              'path' => 'flickr/'. arg(1) . '/tags/' . arg(3), 
-              'title' => t('Tags: @tags', array('@tags'=>str_replace(',', ', ', arg(3)))),
+              'path' => 'flickr/'. arg(1) .'/tags/'. arg(3), 
+              'title' => t('Tags: @tags', array('@tags' => str_replace(',', ', ', arg(3)))),
               'type' => MENU_LOCAL_TASK,
               'callback' => 'flickr_tags_photos',
               'callback arguments' => array(arg(1), $nsid, arg(3)),
@@ -70,7 +70,7 @@ function flickr_tags_cloud($uid, $nsid) {
   drupal_add_css(drupal_get_path('module', 'flickr_tags') .'/flickr_tags.css');
   $account = user_load(array('uid' => $uid));
   //get tag info
-  $poptag_response = flickr_tags_get_list_user_popular($nsid, variable_get('flickr_tags_in_cloud',150));
+  $poptag_response = flickr_tags_get_list_user_popular($nsid, variable_get('flickr_tags_in_cloud', 150));
   
   if ($poptag_response === FALSE) {
     drupal_set_message(t('Error retrieving %user\'s tags from Flickr'), array('%user' => $account->name));
@@ -90,7 +90,7 @@ function flickr_tags_cloud($uid, $nsid) {
   return theme('flickr_tags_cloud', $uid, $nsid, $tag_arr);
 }
 
-function flickr_tags_list($uid, $nsid){
+function flickr_tags_list($uid, $nsid) {
   drupal_add_css(drupal_get_path('module', 'flickr_tags') .'/flickr_tags.css');
   $account = user_load(array('uid' => $uid));
   //get all tags
@@ -117,9 +117,11 @@ function flickr_tags_list($uid, $nsid){
 }
 
 function flickr_tags_photos($uid, $nsid, $tagstring) {
+  global $pager_page_array, $pager_total, $pager_total_items;
+
   drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
+
   $tag_arr = explode(',', $tagstring);
-  global $pager_page_array, $pager_total,$pager_total_items;
   $account = user_load(array('uid' => $uid));
   
   //set this to something else if you want multiple pagers
@@ -144,11 +146,11 @@ function flickr_tags_photos($uid, $nsid, $tagstring) {
   return theme('flickr_photos', $uid, $photo_arr);
 }
 
-function theme_flickr_tags_list($uid, $nsid, $tag_arr){
-  $output = '<ul id="flickr_taglist">' . "\n";
+function theme_flickr_tags_list($uid, $nsid, $tag_arr) {
+  $output = "<ul id='flickr_taglist'>\n";
   $first_char = '';
   foreach ($tag_arr as $tag) {
-    if ($first_char != substr($tag,0,1)) {
+    if ($first_char != substr($tag, 0, 1)) {
       $new_item = TRUE;
     }
     else {
@@ -159,13 +161,13 @@ function theme_flickr_tags_list($uid, $nsid, $tag_arr){
       $output .= "</ul></li>\n";
     }
     if ($new_item) {
-      $first_char = substr($tag,0,1);
+      $first_char = substr($tag, 0, 1);
       $output .= "<li><ul>\n";
     }
     
-    $output .= '<li>' . "\n";
-    $output .= l($tag, 'flickr/' . $uid . '/tags/' . $tag) . "\n";
-    $output .= '</li>' . "\n";
+    $output .= "<li>\n";
+    $output .= l($tag, "flickr/$uid/tags/$tag") ."\n";
+    $output .= "</li>\n";
   }
   if ($first_char!='') {
     $output .= "</ul></li>\n";
@@ -175,7 +177,7 @@ function theme_flickr_tags_list($uid, $nsid, $tag_arr){
   return $output; '';
 }
 
-function theme_flickr_tags_cloud($uid, $nsid, $tag_arr){
+function theme_flickr_tags_cloud($uid, $nsid, $tag_arr) {
   $max_occur = max($tag_arr);
   $min_occur = max($tag_arr);
   
@@ -183,17 +185,17 @@ function theme_flickr_tags_cloud($uid, $nsid, $tag_arr){
   $max_font = 3.5;
   $min_font = 0.7;
   
-  $output = '<ul id="flickr_tagcloud">' . "\n";
+  $output = "<ul id='flickr_tagcloud'>\n";
   foreach ($tag_arr as $tagname => $occurences) {
     
     $font_size = round(($max_font-$min_font)*sqrt($occurences/$max_occur)+$min_font, 1);
     
-    $output .= '<li style="font-size: '.$font_size.'em">' . "\n";
-    $output .= l($tagname, 'flickr/' . $uid . '/tags/' . $tagname) . "\n";
+    $output .= "<li style='font-size: {$font_size}em'>\n";
+    $output .= l($tagname, "flickr/$uid/tags/$tagname") ."\n";
     $output .= "</li>\n";
     
   }
-  $output .= '</ul>' . "\n";
+  $output .= "</ul>\n";
   
   return $output;
 }
