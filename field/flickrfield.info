@@ -1,0 +1,6 @@
+; $Id: flickrfield.info,v 1.1.2.1 2007/11/26 15:53:01 drewish Exp $
+name = Flickrfield
+description = Flickr CCK field to insert Flickr images into content.
+version = "$Name:  $"
+dependencies = flickr content
+package = CCK
