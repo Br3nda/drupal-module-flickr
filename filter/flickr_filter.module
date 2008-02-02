@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.9.2.1 2007/08/27 23:08:40 drewish Exp $
+// $Id: flickr_filter.module,v 1.9.2.2 2008/02/02 23:37:26 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -12,7 +12,7 @@ function flickr_filter_tips($delta, $format, $long = FALSE) {
         $output .= t('The size parameter can be one of the following:');
         $items = array();
         foreach (flickr_photo_sizes() as $key => $text) {
-          $items[] = "$key - $text";
+          $items[] = "<code>$key</code> &mdash; (". $text['label'] .') '. $text['description'];
         }
         $output .= theme('item_list', $items);
       }
