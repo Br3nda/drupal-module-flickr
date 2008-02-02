@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_block.module,v 1.9.2.2 2007/08/27 23:08:40 drewish Exp $
+// $Id: flickr_block.module,v 1.9.2.3 2008/02/02 23:59:19 drewish Exp $
 
 
 /**
@@ -193,9 +193,9 @@ function _flickr_block_random($nsid, $show_n, $size) {
 }
 
 function theme_flickr_block_photo($p, $size = NULL) {
-  return theme_flickr_photo($p, $size);
+  return theme('flickr_photo',$p, $size);
 }
 
 function theme_flickr_block_photoset($ps, $owner, $size) {
-  return theme_flickr_photoset($ps, $owner, $size);
+  return theme('flickr_photoset',$ps, $owner, $size);
 }

@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr_filter.module,v 1.9.2.2 2008/02/02 23:37:26 drewish Exp $
+// $Id: flickr_filter.module,v 1.9.2.3 2008/02/02 23:59:19 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -104,9 +104,9 @@ function flickr_filter_callback_photoset($matches) {
 }
 
 function theme_flickr_filter_photo($p, $size, $attribs) {
-  return theme_flickr_photo($p, $size, NULL, $attribs);
+  return theme('flickr_photo',$p, $size, NULL, $attribs);
 }
 
 function theme_flickr_filter_photoset($ps, $owner, $size, $attribs) {
-  return theme_flickr_photoset($ps, $owner, $size, $attribs);
+  return theme('flickr_photoset',$ps, $owner, $size, $attribs);
 }
