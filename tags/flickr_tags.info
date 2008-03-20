@@ -1,0 +1,5 @@
+; $Id: flickr_tags.info,v 1.2 2008/03/20 22:33:31 drewish Exp $
+name = Flickr Tags
+description = Adds tags capability to Flickr module
+dependencies = flickr
+package = Flickr

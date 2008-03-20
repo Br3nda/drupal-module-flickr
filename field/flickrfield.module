@@ -1,0 +1,199 @@
+<?php
+// $Id: flickrfield.module,v 1.2 2008/03/20 22:33:30 drewish Exp $
+
+/**
+ * @file
+ * Defines a Flickr field type.
+ *
+ * @todo - think about how to control access to photos, might be tricky because of CCK caching.
+ */
+
+/**
+ * Include css unconditionally.
+ */
+function flickrfield_menu($may_cache) {
+  if (!$may_cache) {
+    drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
+  }
+}
+
+/**
+ * Implementation of hook_help().
+ */
+function flickrfield_help($section) {
+  switch ($section) {
+    case 'admin/help#flickrfield':
+      return t('Flickrfields display Flickr photos or photosets. Input the user id of the photo owner and the photo or photoset id. The id is visible in the url when you view the photo or photoset on Flickr.');
+  }
+}
+
+/**
+ * Implementation of hook_field_info().
+ */
+function flickrfield_field_info() {
+  return array(
+    'flickrfield' => array('label' => 'Flickr Photo'),
+  );
+}
+
+/**
+ * Implementation of hook_field_settings().
+ */
+function flickrfield_field_settings($op, $field) {
+  switch ($op) {
+    case 'database columns':
+      $columns = array(
+        'id' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'sortable' => TRUE),
+        'type' => array('type' => 'varchar', 'length' => 10, 'not null' => FALSE, 'sortable' => TRUE),
+        'nsid' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'sortable' => TRUE),
+      );
+      return $columns;
+
+    case 'filters':
+      // This will provide a Views filter by photo or photoset id.
+      return array(
+        'default' => array(
+          'operator' => 'views_handler_operator_like',
+          'handler' => 'views_handler_filter_like',
+        ),
+      );
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_widget_info().
+ */
+function flickrfield_widget_info() {
+  return array(
+    'flickrfield' => array(
+      'label' => 'Flickr Photo',
+      'field types' => array('flickrfield'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function flickrfield_widget($op, &$node, $field, &$items) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['flickr']['#type'] = 'fieldset';
+      $form['flickr']['#title'] = t('Flickr Photos');
+      $form['flickr']['#description'] = t($field['widget']['description']);
+
+      $options = array();
+      $options['photo_id'] = t("Photo");
+      $options['set_id'] = t("Photoset");
+
+      $delta = 0;
+      $range = $field['multiple'] ? sizeof($items) + 2 : 0;
+      foreach (range($delta, $range) as $delta) {
+        $form['flickr']['field_'. $delta][$field['field_name']] = array('#tree' => TRUE);
+        if ($field['multiple']) {
+          $form['flickr']['field_'. $delta][$field['field_name']]['#type'] = 'fieldset';
+          $form['flickr']['field_'. $delta][$field['field_name']]['#title'] = t('Item #@no', array('@no' => intval($delta + 1)));
+          $form['flickr']['field_'. $delta][$field['field_name']]['#collapsible'] = 1;
+          $form['flickr']['field_'. $delta][$field['field_name']]['#collapsed'] = ($delta == 0 || !empty($items[$delta]['type'])) ? 0 : 1;
+        }
+        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['type'] = array(
+           '#type' => 'select',
+           '#title' => t('Item Type'),
+           '#default_value' => $items[$delta]['type'],
+           '#options' => $options,
+           '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
+        );
+        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['id'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Id'),
+          '#default_value' => $items[$delta]['id'],
+          '#description' => t("The photo or photoset id."),
+          '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
+        );
+        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['nsid'] = array(
+          '#type' => 'textfield',
+          '#title' => t('User Id'),
+          '#default_value' => !empty($items[$delta]['nsid']) ? $items[$delta]['nsid'] : variable_get('flickr_default_userid', ''),
+          '#description' => t("The user id of the Flickr user who owns the photos. If this is left blank, the sites's default user will be used. Current default id is @id.", array('@id' => variable_get('flickr_default_userid', ''))),
+          '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
+        );
+      }
+      return $form;
+
+    case 'process form values':
+      // Don't save empty fields except the first value
+      foreach ($items as $delta => $item) {
+        if ($item['id'] == '' && $delta > 0) {
+          unset($items[$delta]);
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function flickrfield_field_formatter_info() {
+  require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+  foreach (flickr_photo_sizes() as $size => $info) {
+    $formatters[$size] = array(
+      'label' => $info['label'],
+      'field types' => array('flickrfield'),
+      );
+  }
+  return $formatters;
+}
+
+/**
+ * Implementation of hook_field_formatter().
+ *
+ */
+function flickrfield_field_formatter($field, $item, $formatter, $node) {
+  require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+  switch ($item['type']) {
+    case 'photo_id':
+      $photo_data = flickr_photo_get_info($item['id']);
+      $img = flickr_img($photo_data, $formatter);
+      $photo_url = flickr_photo_page_url($photo_data['owner'], $photo_data['id']);
+      return theme('flickrfield_photo', $img, $photo_url, $formatter, $photo_data, $node);
+    case 'set_id':
+      $photo_data = flickr_photoset_get_info($item['id']);
+      $img = flickr_img($photo_data, $formatter);
+      $photo_url = flickr_photo_page_url($photo_data['owner'], $photo_data['id']);
+      return theme('flickrfield_photoset', $img, $photo_url, $formatter, $photo_data, $node);
+  }
+}
+
+/**
+ * Flickrfield photo themes.
+ *
+ * If we are not on the node, make the photo link back to the node,
+ * otherwise just display the image. To comply with Flickr terms of service
+ * add a link back to the Flickr page.
+ */
+function theme_flickrfield_photo($img, $photo_url, $formatter, $photo_data, $node) {
+  $title = is_array($photo_data['title']) ? $photo_data['title']['_content'] : $photo_data['title'];
+  if (arg(0) == 'node' && arg(1) == $node->nid) {
+    $output = '<div class="flickr-photo-img">'. $img .'</div>';
+  }
+  else {
+    $output = '<div class="flickr-photo-img">'. l($img, 'node/'. $node->nid, array('title' => $title), NULL, NULL, TRUE, TRUE) . '</div>';
+  }
+  $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
+  return $output;
+}
+
+function theme_flickrfield_photoset($img, $photo_url, $formatter, $photo_data, $node) {
+  $title = is_array($photo_data['title']) ? $photo_data['title']['_content'] : $photo_data['title'];
+  if (arg(0) == 'node' && arg(1) == $node->nid) {
+    $output = '<div class="flickr-photoset-img">'. $img .'</div>';
+  }
+  else {
+    $output = '<div class="flickr-photoset-img">'. l($img, 'node/'. $node->nid, array('title' => $title), NULL, NULL, TRUE, TRUE) . '</div>';
+  }
+  $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
+  return $output;
+}
