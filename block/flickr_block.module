@@ -1,7 +1,5 @@
 <?php
-
-// $Id: flickr_block.module,v 1.11 2008/03/20 22:33:30 drewish Exp $
-
+// $Id: flickr_block.module,v 1.12 2008/03/24 19:56:09 drewish Exp $
 
 /**
  * Implementation of hook_block().
@@ -115,11 +113,13 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       $settings['user_id'] = variable_get('flickr_default_userid', '');
     }
 
+    $block = array();
+
     // Get per user nsid if necessary
     if ($delta < 3) {
       if (arg(0) == 'user' && ($uid = (int) arg(1))) {
         if ($user = user_load(array('uid' => $uid))) {
-          if ($user->flickr['nsid']) {
+          if (!empty($user->flickr['nsid'])) {
             if ($delta == 0) {
               $block['subject'] = t("%username's recent Flickr photos", array('%username' => $user->name));
               $block['content'] = _flickr_block_recent($user->flickr['nsid'], $settings['show_n'], $settings['size']);
@@ -192,10 +192,24 @@ function _flickr_block_random($nsid, $show_n, $size) {
   return $output;
 }
 
+/**
+ * Implementation of hook_theme().
+ */
+function flickr_block_theme() {
+  return array(
+    'flickr_block_photo' => array(
+      'arguments' => array('p', 'size' => NULL),
+    ),
+    'flickr_block_photoset' => array(
+      'arguments' => array('ps', 'owner', 'size'),
+    ),
+  );
+}
+
 function theme_flickr_block_photo($p, $size = NULL) {
-  return theme('flickr_photo',$p, $size);
+  return theme('flickr_photo', $p, $size);
 }
 
 function theme_flickr_block_photoset($ps, $owner, $size) {
-  return theme('flickr_photoset',$ps, $owner, $size);
+  return theme('flickr_photoset', $ps, $owner, $size);
 }

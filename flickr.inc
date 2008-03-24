@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.27 2008/03/20 22:33:30 drewish Exp $
+// $Id: flickr.inc,v 1.28 2008/03/24 19:56:09 drewish Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -127,7 +127,7 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
 
   // Save cacheable results for future use.
   if ($cacheable) {
-    cache_set("flickr_$arg_hash", 'cache', $result->data, time() + variable_get('flickr_cache_duration', 3600));
+    cache_set("flickr_$arg_hash", $result->data, 'cache', time() + variable_get('flickr_cache_duration', 3600));
   }
 
   return $response;
@@ -158,6 +158,9 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
   }
   if (!isset($attributes) || !is_array($attributes)) {
     $attributes = array();
+  }
+  if (empty($attributs['class'])) {
+    $attributes['class'] = NULL;
   }
 
   // photoset's use primary instead of id to specify the image.
