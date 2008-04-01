@@ -1,0 +1,40 @@
+<?php
+// $Id: flickrfield.install,v 1.1 2008/04/01 06:01:28 drewish Exp $
+
+// Borrowed shamelessly from cck/text.install
+
+// Updates happen in random order, whether or not the module is enabled,
+// so include critical code here just to be sure.
+include_once('./'. drupal_get_path('module', 'content') .'/content.module');
+
+/**
+ * Implementation of hook_install().
+ */
+function flickrfield_install() {
+  content_notify('install', 'flickrfield');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function flickrfield_uninstall() {
+  content_notify('uninstall', 'flickrfield');
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is enabled.
+ */
+function flickrfield_enable() {
+  content_notify('enable', 'flickrfield');
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function flickrfield_disable() {
+  content_notify('disable', 'flickrfield');
+}
