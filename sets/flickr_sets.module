@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_sets.module,v 1.8 2008/03/24 19:56:09 drewish Exp $
+// $Id: flickr_sets.module,v 1.9 2008/04/01 06:17:11 drewish Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -46,7 +46,7 @@ function flickr_sets_photosets($account, $nsid = NULL) {
   $nsid = $account->flickr['nsid'];
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = !empty($_GET['page']) && $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
 
   $set_response = flickr_photoset_get_list($nsid);
 
@@ -85,11 +85,11 @@ function flickr_sets_photoset($account, $set) {
   //display photos
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = !empty($_GET['page']) && $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
   $per_page = variable_get('flickr_photos_per_page', 20);
 
   //request set photos
-  $set_response = flickr_set_load($set_id, $pager_page_array[$element]+1);
+  $set_response = flickr_set_load($set_id, $pager_page_array[$element] + 1);
 
   if (!$set_response) {
     drupal_set_message(t('Error retrieving :setid\'s photosets from Flickr'), array(':setid', $set_id));
