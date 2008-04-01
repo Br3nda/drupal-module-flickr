@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_block.module,v 1.12 2008/03/24 19:56:09 drewish Exp $
+// $Id: flickr_block.module,v 1.13 2008/04/01 06:18:48 drewish Exp $
 
 /**
  * Implementation of hook_block().
@@ -109,7 +109,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       'size' => 's',
     ));
     // Get the default user id as a fallback
-    if (isset($settings['user_id'])) {
+    if (!isset($settings['user_id'])) {
       $settings['user_id'] = variable_get('flickr_default_userid', '');
     }
 
