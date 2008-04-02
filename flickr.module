@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.41 2008/04/01 06:17:11 drewish Exp $
+// $Id: flickr.module,v 1.42 2008/04/02 20:09:05 heine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -214,7 +214,7 @@ function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NUL
   $output = "<div class='flickr-photo-box'>\n";
   $output .= "<a href='$photo_url'>$img</a>";
   $output .= "<a href='$photo_url'>";
-  $output .= '<div class="flickr-photo-title">'. $title ."</div>\n";
+  $output .= '<div class="flickr-photo-title">'. check_plain($title) ."</div>\n";
   $output .= "</a>";
   $output .= "</div>\n";
 
