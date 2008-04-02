@@ -1,5 +1,5 @@
 <?php
-//$Id: flickr_sets.module,v 1.6.2.3 2007/08/27 23:08:40 drewish Exp $
+//$Id: flickr_sets.module,v 1.6.2.4 2008/04/02 20:09:15 heine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -68,7 +68,7 @@ function flickr_sets_photosets($uid, $nsid) {
   $account = user_load(array('uid' => $uid));
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
   
   $set_response = flickr_photoset_get_list($nsid);
   
@@ -101,14 +101,14 @@ function flickr_sets_photoset($uid, $nsid, $set_id, $set_info) {
   //display photos
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
   $per_page = variable_get('flickr_photos_per_page', 20);
   
   //request set photos
   $set_response = flickr_request('flickr.photosets.getPhotos', 
     array(
       'photoset_id' => $set_id,
-      'page' => $pager_page_array[$element]+1,
+      'page' => $pager_page_array[$element] + 1,
       'per_page' => variable_get('flickr_photos_per_page', 20),
      ));
   

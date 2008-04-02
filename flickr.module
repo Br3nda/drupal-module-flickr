@@ -1,6 +1,6 @@
 <?php
 
-// $Id: flickr.module,v 1.37.2.4 2008/02/26 00:10:39 drewish Exp $
+// $Id: flickr.module,v 1.37.2.5 2008/04/02 20:09:15 heine Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -197,7 +197,7 @@ function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NUL
   $output .= "<div class='flickr-photo-box'>\n";
   $output .= "<a href='$photo_url'>$img</a>";
   $output .= "<a href='$photo_url'>";
-  $output .= '<div class="flickr-photo-title">'. $title ."</div>\n";
+  $output .= '<div class="flickr-photo-title">'. check_plain($title) ."</div>\n";
   $output .= "</a>";
   $output .= "</div>\n";
 
@@ -269,7 +269,7 @@ function flickr_photos($uid = NULL) {
   global $pager_page_array, $pager_total, $pager_total_items;
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
 
   if ($uid === NULL) {
     $nsid = variable_get('flickr_default_userid', '');
@@ -289,7 +289,7 @@ function flickr_photos($uid = NULL) {
     }
   }
 
-  $photos = flickr_photos_search($nsid, $pager_page_array[$element]+1);
+  $photos = flickr_photos_search($nsid, $pager_page_array[$element] + 1);
   if (!$photos) {
     drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid' => $nsid)));
     return FALSE;

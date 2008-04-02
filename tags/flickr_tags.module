@@ -1,6 +1,6 @@
 <?php
 
-//$Id: flickr_tags.module,v 1.1.2.2 2007/08/27 23:08:40 drewish Exp $
+//$Id: flickr_tags.module,v 1.1.2.3 2008/04/02 20:09:15 heine Exp $
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
 /**
@@ -126,9 +126,9 @@ function flickr_tags_photos($uid, $nsid, $tagstring) {
   
   //set this to something else if you want multiple pagers
   $element = 0;
-  $pager_page_array[$element] = $_GET['page'] ? $_GET['page'] : '';
+  $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
   
-  $photo_arr = flickr_photos_search($nsid, $pager_page_array[$element]+1, flickr_tag_request_args($tag_arr));
+  $photo_arr = flickr_photos_search($nsid, $pager_page_array[$element] + 1, flickr_tag_request_args($tag_arr));
   
   if ($photo_arr === FALSE) {
       drupal_set_message(t('Error retrieving %user\'s photos from Flickr'), array('%user' => $account->name));
