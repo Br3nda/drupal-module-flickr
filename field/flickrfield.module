@@ -1,5 +1,5 @@
 <?php
-// $Id: flickrfield.module,v 1.1.2.1 2007/11/14 00:21:33 drewish Exp $
+// $Id: flickrfield.module,v 1.1.2.2 2008/04/28 11:38:26 karens Exp $
 
 /**
  * @file
@@ -152,6 +152,9 @@ function flickrfield_field_formatter_info() {
  *
  */
 function flickrfield_field_formatter($field, $item, $formatter, $node) {
+  if (empty($item['id'])) {
+    return;
+  }
   require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
   switch ($item['type']) {
     case 'photo_id':
