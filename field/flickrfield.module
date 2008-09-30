@@ -1,5 +1,5 @@
 <?php
-// $Id: flickrfield.module,v 1.3 2008/03/24 19:56:09 drewish Exp $
+// $Id: flickrfield.module,v 1.4 2008/09/30 10:35:08 karens Exp $
 
 /**
  * @file
@@ -32,7 +32,7 @@ function flickrfield_field_info() {
   return array(
     'flickrfield' => array(
       'label' => 'Flickr Photo',
-      'description' => t('Blargh! Flickr photo!'),
+      'description' => t('Store Flickr Photo or Photoset ids and display the photos in nodes and views.'),
     ),
   );
 }
@@ -49,16 +49,6 @@ function flickrfield_field_settings($op, $field) {
         'nsid' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'sortable' => TRUE),
       );
       return $columns;
-
-    case 'filters':
-      // This will provide a Views filter by photo or photoset id.
-      return array(
-        'default' => array(
-          'operator' => 'views_handler_operator_like',
-          'handler' => 'views_handler_filter_like',
-        ),
-      );
-      break;
   }
 }
 
@@ -82,8 +72,8 @@ function flickrfield_elements() {
   return array(
     'flickrfield' => array(
       '#input' => TRUE,
-      //'#columns' => array('type', 'id', 'uid'),
-      //'#process' => array('flickrfield_process'),
+      '#columns' => array('type', 'id', 'uid'),
+      '#process' => array('flickrfield_process'),
     ),
   );
 }
@@ -96,103 +86,29 @@ function flickrfield_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   return $element;
 }
 
-/*
 function flickrfield_process($element, $edit, $form_state, $form) {
-  $field_key = $element['#columns'][0];
-  $element[$field_key] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Item',
-    '#default_value' => isset($element['#value']) ? $element['#value'] : '',
-    '#element_validate' => array('flickrfield_validate'),
-
-    // The following values were set by the content module and need
-    // to be passed down to the nested element.
-    '#field_name' => $element['#field_name'],
-    '#delta' => $element['#delta'],
-    '#columns' => $element['#columns'],
-    '#title' => $element['#title'],
-    '#required' => $element['#required'],
-    '#description' => $element['#description'],
-  );
-  $element[$field_key]['type'] = array(
+  $options = array();
+  $options['photo_id'] = t("Photo");
+  $options['set_id'] = t("Photoset");
+  $element['type'] = array(
     '#type' => 'select',
     '#title' => t('Item Type'),
-    '#default_value' => 'nubba',
-    '#options' => array('photo_id' => t('Photo'), 'set_id' => t('Photoset')),
+    '#default_value' => !empty($element['#value']['type']) ? $element['#value']['type'] : '',
+    '#options' => $options,
+  );
+  $element['id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Id'),
+    '#default_value' => !empty($element['#value']['id']) ? $element['#value']['id'] : '',
+  );
+  $element['nsid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User Id'),
+    '#default_value' => !empty($element['#value']['nsid']) ? $element['#value']['nsid'] : variable_get('flickr_default_userid', ''),
+    '#required' => $element['#required'],
+    '#description' => t("The user id of the Flickr user who owns the photos. If this is left blank, the sites's default user will be used. Current default id is @id.", array('@id' => variable_get('flickr_default_userid', ''))),
   );
   return $element;
-}
- */
-
-function theme_flickrfield($element) {
-  var_dump($element);
-  return theme('form_element', array(
-      '#title' => 'Item',
-      '#description' => 'Noooooo!',
-      '#type' => 'text',
-    ),
-    $element['#value']
-  );
-}
-
-/**
- * Implementation of hook_widget().
- */
-function flickrfield_widgeto($op, &$node, $field, &$items) {
-  switch ($op) {
-    case 'form':
-      $form = array();
-      $form['flickr']['#type'] = 'fieldset';
-      $form['flickr']['#title'] = t('Flickr Photos');
-      $form['flickr']['#description'] = t($field['widget']['description']);
-
-      $options = array();
-      $options['photo_id'] = t("Photo");
-      $options['set_id'] = t("Photoset");
-
-      $delta = 0;
-      $range = $field['multiple'] ? sizeof($items) + 2 : 0;
-      foreach (range($delta, $range) as $delta) {
-        $form['flickr']['field_'. $delta][$field['field_name']] = array('#tree' => TRUE);
-        if ($field['multiple']) {
-          $form['flickr']['field_'. $delta][$field['field_name']]['#type'] = 'fieldset';
-          $form['flickr']['field_'. $delta][$field['field_name']]['#title'] = t('Item #@no', array('@no' => intval($delta + 1)));
-          $form['flickr']['field_'. $delta][$field['field_name']]['#collapsible'] = 1;
-          $form['flickr']['field_'. $delta][$field['field_name']]['#collapsed'] = ($delta == 0 || !empty($items[$delta]['type'])) ? 0 : 1;
-        }
-        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['type'] = array(
-           '#type' => 'select',
-           '#title' => t('Item Type'),
-           '#default_value' => $items[$delta]['type'],
-           '#options' => $options,
-           '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
-        );
-        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['id'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Id'),
-          '#default_value' => $items[$delta]['id'],
-          '#description' => t("The photo or photoset id."),
-          '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
-        );
-        $form['flickr']['field_'. $delta][$field['field_name']][$delta]['nsid'] = array(
-          '#type' => 'textfield',
-          '#title' => t('User Id'),
-          '#default_value' => !empty($items[$delta]['nsid']) ? $items[$delta]['nsid'] : variable_get('flickr_default_userid', ''),
-          '#description' => t("The user id of the Flickr user who owns the photos. If this is left blank, the sites's default user will be used. Current default id is @id.", array('@id' => variable_get('flickr_default_userid', ''))),
-          '#required' => $delta == 0 && $field['required'] ? TRUE : FALSE,
-        );
-      }
-      return $form;
-
-    case 'process form values':
-      // Don't save empty fields except the first value
-      foreach ($items as $delta => $item) {
-        if ($item['id'] == '' && $delta > 0) {
-          unset($items[$delta]);
-        }
-      }
-      break;
-  }
 }
 
 /**
@@ -217,11 +133,42 @@ function flickrfield_field_formatter_info() {
 }
 
 /**
- * Implementation of hook_field_formatter().
- *
+ * Implementation of hook_theme().
  */
-function flickrfield_field_formatter($field, $item, $formatter, $node) {
+function flickrfield_theme() {
   require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+  $themes = array();
+  foreach (flickr_photo_sizes() as $size => $info) {
+    $themes['flickrfield_formatter_'. $size] = array(
+      'arguments' => array('element'),
+      'function' => 'theme_flickrfield_field_formatter',
+      );
+  }
+  return $themes + array(
+    'flickrfield_photo' => array(
+      'arguments' => array('img', 'photo_url', 'formatter', 'photo_data', 'node'),
+    ),
+    'flickrfield_photoset' => array(
+      'arguments' => array('img', 'photo_url', 'formatter', 'photo_data', 'node'),
+    ),
+    'flickrfield' => array(
+      'arguments' => array('element'),
+    ),
+  );
+}
+
+/**
+ * Basic flickrfield formatter.
+ */
+function theme_flickrfield_field_formatter($element) {
+  require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+  $item = $element['#item'];
+  if (empty($item['id'])) {
+    return;
+  }
+  $node = $element['#node'];
+  $formatter = $element['#formatter'];
+  $field_name = $element['#field_name'];
   switch ($item['type']) {
     case 'photo_id':
       $photo_data = flickr_photo_get_info($item['id']);
@@ -234,23 +181,6 @@ function flickrfield_field_formatter($field, $item, $formatter, $node) {
       $photo_url = flickr_photo_page_url($photo_data['owner'], $photo_data['id']);
       return theme('flickrfield_photoset', $img, $photo_url, $formatter, $photo_data, $node);
   }
-}
-
-/**
- * Implementation of hook_theme().
- */
-function flickrfield_theme() {
-  return array(
-    'flickrfield_photo' => array(
-      'arguments' => array('img', 'photo_url', 'formatter', 'photo_data', 'node'),
-    ),
-    'flickrfield_photoset' => array(
-      'arguments' => array('img', 'photo_url', 'formatter', 'photo_data', 'node'),
-    ),
-    'flickrfield' => array(
-      'arguments' => array('element'),
-    ),
-  );
 }
 
 /**
@@ -282,4 +212,24 @@ function theme_flickrfield_photoset($img, $photo_url, $formatter, $photo_data, $
   }
   $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
   return $output;
+}
+
+/**
+ * Theme for the form element.
+ * 
+ * The form is already rendered by the child elements by the time it comes back here,
+ * just group each delta grouping into its own fieldset.
+ */
+function theme_flickrfield($element) {
+  $fields = content_fields();
+  $field = $fields[$element['#field_name']];
+  $fieldset = array(
+    '#title' => $field['widget']['label'] .' '. ($element['#delta'] > 0 ? intval($element['#delta'] + 1) : ''),
+    '#value' => $element['#children'],
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#description' => $element['#description'],
+    '#attributes' => array(),
+  );
+  return theme('fieldset', $fieldset);
 }

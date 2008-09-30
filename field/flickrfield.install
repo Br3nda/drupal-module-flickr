@@ -1,16 +1,10 @@
 <?php
-// $Id: flickrfield.install,v 1.1 2008/04/01 06:01:28 drewish Exp $
-
-// Borrowed shamelessly from cck/text.install
-
-// Updates happen in random order, whether or not the module is enabled,
-// so include critical code here just to be sure.
-include_once('./'. drupal_get_path('module', 'content') .'/content.module');
-
+// $Id: flickrfield.install,v 1.2 2008/09/30 10:35:08 karens Exp $
 /**
  * Implementation of hook_install().
  */
 function flickrfield_install() {
+  drupal_load('module', 'content');
   content_notify('install', 'flickrfield');
 }
 
@@ -18,6 +12,7 @@ function flickrfield_install() {
  * Implementation of hook_uninstall().
  */
 function flickrfield_uninstall() {
+  drupal_load('module', 'content');
   content_notify('uninstall', 'flickrfield');
 }
 
@@ -27,6 +22,7 @@ function flickrfield_uninstall() {
  * Notify content module when this module is enabled.
  */
 function flickrfield_enable() {
+  drupal_load('module', 'content');
   content_notify('enable', 'flickrfield');
 }
 
@@ -36,5 +32,6 @@ function flickrfield_enable() {
  * Notify content module when this module is disabled.
  */
 function flickrfield_disable() {
+  drupal_load('module', 'content');
   content_notify('disable', 'flickrfield');
 }
