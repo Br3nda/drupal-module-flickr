@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.28 2008/03/24 19:56:09 drewish Exp $
+// $Id: flickr.inc,v 1.29 2008/11/21 10:19:37 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -74,7 +74,7 @@ function flickr_request($method, $args, $cacheable = TRUE, $return_errors = FALS
   foreach ($args as $k => $v){
     $encoded_params[] = urlencode($k) .'='. urlencode($v);
   }
-  $url = FLICKR_REST_ENDPOINT .'?'. implode('&', $encoded_params);
+  $url = FLICKR_REST_ENDPOINT .'?'. implode('&', $encoded_params);  
 
   // If it's a cachable request, try to load a cached value.
   if ($cacheable) {

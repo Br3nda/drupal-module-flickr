@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_block.module,v 1.14 2008/09/30 05:21:37 drewish Exp $
+// $Id: flickr_block.module,v 1.15 2008/11/21 10:19:37 paulbooker Exp $
 
 /**
  * Implementation of hook_block().
@@ -175,9 +175,9 @@ function _flickr_block_photosets($nsid, $show_n, $size) {
 
 function _flickr_block_random($nsid, $show_n, $size) {
   $output = '';
+  $random_photos = array();
   if ($photos = flickr_photos_search($nsid, 1, array('per_page' => 500))) {
     $page_count = $photos['pages'];
-
     // we shouldn't try to return more than the total number of photos
     $to = min($show_n, $photos['total']);
     $output = '';
@@ -187,9 +187,16 @@ function _flickr_block_random($nsid, $show_n, $size) {
       $photos = flickr_photos_search($nsid, rand(1, $page_count), array('per_page' => 500));
       // then select a random photo
       $index = rand(0, count($photos['photo']) - 1);
-      $output .= theme('flickr_block_photo', $photos['photo'][$index], $size);
+      $photo_id = $photos['photo'][$index]['id'];
+      if (in_array($photo_id, $random_photos)) {
+        $i--; // photo already added 
+      } 
+      else {
+        $random_photos[] = $photo_id; 
+        $output .= theme('flickr_block_photo', $photos['photo'][$index], $size); 
+      }
     }
-  }
+  } 
   return $output;
 }
 
