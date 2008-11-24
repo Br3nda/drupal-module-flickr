@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.29 2008/11/21 10:19:37 paulbooker Exp $
+// $Id: flickr.inc,v 1.30 2008/11/24 00:04:19 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -159,7 +159,7 @@ function flickr_img($photo, $size = NULL, $attributes = NULL) {
   if (!isset($attributes) || !is_array($attributes)) {
     $attributes = array();
   }
-  if (empty($attributs['class'])) {
+  if (empty($attributes['class'])) {
     $attributes['class'] = NULL;
   }
 
