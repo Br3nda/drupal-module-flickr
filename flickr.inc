@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.30 2008/11/24 00:04:19 paulbooker Exp $
+// $Id: flickr.inc,v 1.31 2008/11/24 00:15:48 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -539,5 +539,5 @@ function flickr_set_error($messageOrResponse) {
   if (user_access('administer flickr')) {
     drupal_set_message($message, 'error');
   }
-  watchdog('flickr', $message, WATCHDOG_WARNING);
+  watchdog('flickr', $message, array(), WATCHDOG_WARNING);
 }
