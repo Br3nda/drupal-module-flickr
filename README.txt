@@ -19,7 +19,8 @@ Installation and configuration:
     or '/sites/all/modlues'.
 2.) Enable the module in 'admin/build/modules/'.
 3.) Configure the API Key '/admin/settings/flickr'.
-4.) Add flickr the sites input filters. 'admin/settings/filters'.
+4.) Add the flickr filter to one of your input formats by following
+the configure link 'admin/settings/filters'.
 5.) Allow permissions '/admin/user/access'.
 
 Usage:
