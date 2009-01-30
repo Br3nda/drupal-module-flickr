@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.31 2008/11/24 00:15:48 paulbooker Exp $
+// $Id: flickr.inc,v 1.31.2.1 2009/01/30 10:39:01 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -360,14 +360,14 @@ function flickr_people_get_info($nisd) {
 /**
  * Tries to match an 'identifier' onto a flickr nsid
  *
- * This function will first see whether $identifier is allready
+ * This function will first see whether $identifier is already
  * a nsid (format check only, no api call).  If it is not and the
  * identifier has the format of an email, an api call will be made to
  * check whether there is an nsid for that email.  If this is not the
  * case, the $identifier is treated as a username and an api call is
  * made to find the nsid for that username.
  *
- * If none of these succees, the result will be false
+ * If none of these succeed, the result will be false
  *
  * @param $identifier
  *   identifier to find an nsid for

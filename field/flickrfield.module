@@ -1,5 +1,5 @@
 <?php
-// $Id: flickrfield.module,v 1.4 2008/09/30 10:35:08 karens Exp $
+// $Id: flickrfield.module,v 1.4.2.1 2009/01/30 10:39:01 paulbooker Exp $
 
 /**
  * @file
@@ -178,7 +178,7 @@ function theme_flickrfield_field_formatter($element) {
     case 'set_id':
       $photo_data = flickr_photoset_get_info($item['id']);
       $img = flickr_img($photo_data, $formatter);
-      $photo_url = flickr_photo_page_url($photo_data['owner'], $photo_data['id']);
+      $photo_url = flickr_photoset_page_url($photo_data['owner'], $photo_data['id']);
       return theme('flickrfield_photoset', $img, $photo_url, $formatter, $photo_data, $node);
   }
 }
@@ -196,7 +196,7 @@ function theme_flickrfield_photo($img, $photo_url, $formatter, $photo_data, $nod
     $output = '<div class="flickr-photo-img">'. $img .'</div>';
   }
   else {
-    $output = '<div class="flickr-photo-img">'. l($img, 'node/'. $node->nid, array('title' => $title), NULL, NULL, TRUE, TRUE) . '</div>';
+    $output = '<div class="flickr-photo-img">'. l($img, 'node/'. $node->nid, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) . '</div>';
   }
   $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
   return $output;
@@ -208,7 +208,7 @@ function theme_flickrfield_photoset($img, $photo_url, $formatter, $photo_data, $
     $output = '<div class="flickr-photoset-img">'. $img .'</div>';
   }
   else {
-    $output = '<div class="flickr-photoset-img">'. l($img, 'node/'. $node->nid, array('title' => $title), NULL, NULL, TRUE, TRUE) . '</div>';
+    $output = '<div class="flickr-photoset-img">'. l($img, 'node/'. $node->nid, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) . '</div>';
   }
   $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
   return $output;

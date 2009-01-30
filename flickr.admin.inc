@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.admin.inc,v 1.1 2008/03/24 19:57:18 drewish Exp $
+// $Id: flickr.admin.inc,v 1.1.2.1 2009/01/30 10:39:01 paulbooker Exp $
 
 /**
  * Implementation of hook_settings
@@ -84,6 +84,6 @@ function flickr_admin_settings_submit($form, &$form_state) {
   }
 
   // ... and save the settings
-  system_settings_form_submit($form, &$form_state);
+  system_settings_form_submit($form, $form_state);
 }
 

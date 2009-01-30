@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.install,v 1.5 2008/03/24 19:56:09 drewish Exp $
+// $Id: flickr.install,v 1.5.2.1 2009/01/30 10:39:01 paulbooker Exp $
 
 function flickr_install() {
   drupal_install_schema('flickr');
@@ -7,6 +7,10 @@ function flickr_install() {
 
 function flickr_uninstall() {
   drupal_uninstall_schema('flickr');
+  variable_del('flickr_api_key');
+  variable_del('flickr_api_secret');
+  variable_del('flickr_default_userid');
+  variable_del('flickr_cache_duration');
 }
 
 function flickr_schema() {
