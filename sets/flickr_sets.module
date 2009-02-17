@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_sets.module,v 1.10.2.1 2009/01/13 21:12:12 paulbooker Exp $
+// $Id: flickr_sets.module,v 1.10.2.2 2009/02/17 16:47:24 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -155,7 +155,7 @@ function theme_flickr_sets_photoset($uid, $per_page, $photo_arr, $set_info) {
   return $output;
 }
 
-function theme_flickr_sets_photoset_box($ps, $uid, $owner, $size = NULL, $format = NULL) {
+function theme_flickr_sets_photoset_box($ps, $uid, $owner, $size = NULL, $format = NULL) { 
   $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
 
   $output = "<div class='flickr-photoset-box'>\n";

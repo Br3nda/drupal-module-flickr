@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.42.2.3 2009/02/08 20:05:41 paulbooker Exp $
+// $Id: flickr.module,v 1.42.2.4 2009/02/17 16:47:24 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -187,6 +187,7 @@ function flickr_photos($user = NULL) {
     $uid = $account->uid;
   }
 
+  $nsid = flickr_user_find_by_identifier($nsid);
   $photos = flickr_photos_search($nsid, $pager_page_array[$element] + 1);
   if (!$photos) {
     drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid' => $nsid)));
@@ -233,9 +234,11 @@ function theme_flickr_photos($uid, $photos) {
 }
 
 function theme_flickr_photoset($ps, $owner, $size, $attribs = NULL) {
- $img = flickr_img($ps, $size, $attribs);    $output = theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
-  $photo_url = flickr_photoset_page_url($owner, $ps['id']);    $output .= "<div class='flickr-photoset'>\n";
-  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];    $photos = flickr_set_load($ps['id']);
+  $img = flickr_img($ps, $size, $attribs);    
+  $output = theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
+  $photo_url = flickr_photoset_page_url($owner, $ps['id']);    
+  $output .= "<div class='flickr-photoset'>\n";
+  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];   
   return l($img, $photo_url, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE));
 }
 
