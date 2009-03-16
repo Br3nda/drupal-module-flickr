@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.admin.inc,v 1.1.2.1 2009/01/30 10:39:01 paulbooker Exp $
+// $Id: flickr.admin.inc,v 1.1.2.2 2009/03/16 17:34:49 paulbooker Exp $
 
 /**
  * Implementation of hook_settings
@@ -34,7 +34,23 @@ function flickr_admin_settings() {
     '#default_value' => variable_get('flickr_cache_duration', 3600),
     '#description' => t("The refresh interval indicating how often you want to check cached Flickr API calls are up to date."),
   );
-
+  $form['flickr_photos_per_page'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of photos per photoset'),
+    '#default_value' => variable_get('flickr_photos_per_page', '30'),
+    '#options' => array(
+      '10' => t('10'),
+      '30' => t('30'),
+      '50' => t('50'),
+      '100' => t('100'),
+      '150' => t('150'),
+      '200' => t('200'),
+      '300' => t('300'),
+      '400' => t('400'),
+      '500' => t('500'),
+    ),
+    '#description' => t("The number indicates how many photos of a photoset display in your nodes. After saving the configuration, <a href='?q=admin/settings/performance'>clear the cache</a>."),
+  );
   // we need an api key before we can verify usernames
   if (!$form['flickr_api_key']['#default_value']) {
     $form['flickr_default_userid']['#disabled'] = TRUE;
@@ -72,6 +88,7 @@ function flickr_admin_settings_submit($form, &$form_state) {
   // clean up the data ...
   $form_state['values']['flickr_api_key'] = trim($form_state['values']['flickr_api_key']);
   $form_state['values']['flickr_api_secret'] = trim($form_state['values']['flickr_api_secret']);
+  $form_state['values']['flickr_photos_per_page'] = trim($form_state['values']['flickr_photos_per_page']);
   $form_state['values']['flickr_default_userid'] = trim($form_state['values']['flickr_default_userid']);
 
   // ... replace the usernames with a user id ...

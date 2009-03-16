@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.31.2.1 2009/01/30 10:39:01 paulbooker Exp $
+// $Id: flickr.inc,v 1.31.2.2 2009/03/16 17:34:49 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
