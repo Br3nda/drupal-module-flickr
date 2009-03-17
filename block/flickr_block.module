@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_block.module,v 1.15.2.1 2009/01/30 10:39:01 paulbooker Exp $
+// $Id: flickr_block.module,v 1.15.2.2 2009/03/17 21:56:54 paulbooker Exp $
 
 /**
  * Implementation of hook_block().
@@ -16,9 +16,10 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks[3]['info'] = t('Flickr recent photos');
     $blocks[4]['info'] = t('Flickr recent photosets');
     $blocks[5]['info'] = t('Flickr random photos');
+   	$blocks[6]['info'] = t('Flickr group photos');
 
 	// Photoset blocks
-	$blocks[6]['info'] = t('Flickr random photo from photoset');
+	$blocks[7]['info'] = t('Flickr random photo from photoset');
 	
     return $blocks;
 
@@ -78,7 +79,11 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       break;
     case 5: // sitewide, random
       break;
-	case 6: // sitewide, random
+   	case 6: // sitewide, group
+	  $form["flickr_block_{$delta}_user_id"]['#title'] = t('Show photos from this group id');
+	  $form["flickr_block_{$delta}_user_id"]['#description'] = t('Will select photos from this group pool');
+	  break;
+	case 7: // sitewide, random
 	  $form["flickr_block_{$delta}_photoset"] = array(
 	    '#type' => 'textfield',
 	    '#title' => t('Flickr Photoset Id'),
@@ -105,13 +110,14 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
     case 3:
     case 4:
     case 5:
+    case 6: 
       variable_set('flickr_block_'. $delta, array(
         'user_id' => $edit["flickr_block_{$delta}_user_id"],
         'show_n' => (int) $edit["flickr_block_{$delta}_show_n"],
         'size' => $edit["flickr_block_{$delta}_size"],
       ));
       break;
-	case 6:
+	case 7:
 	  variable_set('flickr_block_'. $delta, array(
 	  'user_id' => $edit["flickr_block_{$delta}_user_id"],
 	  'show_n' => (int) $edit["flickr_block_{$delta}_show_n"],
@@ -169,7 +175,11 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       $block['subject'] = t('Flickr random photos');
       $block['content'] = _flickr_block_random($settings['user_id'], $settings['show_n'], $settings['size']);
     }
-	elseif ($delta == 6) {
+    elseif ($delta == 6) {
+	  $block['subject'] = t('Flickr Group photos');
+	  $block['content'] = _flickr_block_group_recent($settings['user_id'], $settings['show_n'], $settings['size']);
+	}	
+	elseif ($delta == 7) {
 	  $block['subject'] = t('Flickr random photoset photos');
 	  $block['content'] = _flickr_block_photoset_random($settings['user_id'], $settings['show_n'], $settings['size'], $settings['photoset_id']);
 	}
@@ -254,6 +264,19 @@ function _flickr_block_photoset_random($nsid, $show_n, $size, $photoset_id) {
     //insert owner into $photo because theme_flickr_photo needs it
     $photos[$i]['owner'] = $info['owner'];
     $output .= theme('flickr_block_photo', $photos[$i], $size);
+  }
+  return $output;
+}
+
+/*
+ * This renders a block with photos from the selected groupid
+ */
+function _flickr_block_group_recent($groupid, $show_n, $size) {
+  $output = '';
+  if ($photos = flickr_get_group_photos($groupid, 1, array('per_page' => $show_n))) {
+    foreach ($photos['photo'] as $photo) {
+      $output .= theme('flickr_block_photo', $photo, $size);
+    }
   }
   return $output;
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.42.2.5 2009/03/16 17:34:49 paulbooker Exp $
+// $Id: flickr.module,v 1.42.2.6 2009/03/17 21:56:54 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -234,7 +234,7 @@ function theme_flickr_photos($uid, $photos) {
 }
 
 function theme_flickr_photoset($ps, $owner, $size, $attribs = NULL) {
-  if (module_exists(flickr_sets)) {
+  if (module_exists('flickr_sets')) {
 	$output .= "<div class='flickr-photoset'>\n";
 	$photos = flickr_set_load($ps['id']);
 	foreach ((array) $photos['photoset']['photo'] as $photo) {

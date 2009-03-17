@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.inc,v 1.31.2.2 2009/03/16 17:34:49 paulbooker Exp $
+// $Id: flickr.inc,v 1.31.2.3 2009/03/17 21:56:54 paulbooker Exp $
 
 define('FLICKR_REST_ENDPOINT', 'http://api.flickr.com/services/rest/');
 
@@ -540,4 +540,30 @@ function flickr_set_error($messageOrResponse) {
     drupal_set_message($message, 'error');
   }
   watchdog('flickr', $message, array(), WATCHDOG_WARNING);
+}
+
+/**
+ * @param $nid
+ *   nsid of the group whose photos you want
+ *
+ * @return
+ *   response from the flickr method flickr.photosets.getList
+ *   (http://www.flickr.com/services/api/flickr.photosets.getList.html)
+*/
+function flickr_get_group_photos($nsid, $page = 1, $other_args = array()){
+  $args = array (
+    'group_id' => $nsid,
+    'page' => $page,
+  );
+
+  //set per_page to flickr module default if it is not specified in $other_args
+  if (!isset($other_args['per_page'])) {
+    $args['per_page'] = variable_get('flickr_photos_per_page', 20);
+  }
+
+  $response = flickr_request('flickr.groups.pools.getPhotos', array_merge($args, $other_args));
+  if ($response) {
+    return $response['photos'];
+  }
+  return FALSE;
 }
