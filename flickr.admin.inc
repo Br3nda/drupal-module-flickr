@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.admin.inc,v 1.1.2.2 2009/03/16 17:34:49 paulbooker Exp $
+// $Id: flickr.admin.inc,v 1.1.2.3 2009/06/24 19:35:08 ksenzee Exp $
 
 /**
  * Implementation of hook_settings
@@ -57,6 +57,9 @@ function flickr_admin_settings() {
     $form['flickr_default_userid']['#description'] .= t(" Disabled until a valid API Key is set.");
   }
 
+  // Add a submit handler before the system_settings_form submit handler.
+  $form['#submit'] = array('flickr_admin_settings_submit');
+  
   return system_settings_form($form);
 }
 
@@ -99,8 +102,5 @@ function flickr_admin_settings_submit($form, &$form_state) {
       $form_state['values']['flickr_default_userid'] = $user['id'];
     }
   }
-
-  // ... and save the settings
-  system_settings_form_submit($form, $form_state);
 }
 
