@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_block.module,v 1.15.2.2 2009/03/17 21:56:54 paulbooker Exp $
+// $Id: flickr_block.module,v 1.15.2.3 2010/05/06 16:33:30 paulbooker Exp $
 
 /**
  * Implementation of hook_block().
@@ -40,7 +40,7 @@ function flickr_block($op = 'list', $delta = 0, $edit = array()) {
       '#type' => 'textfield',
       '#title' => t('Flickr User Id'),
       '#default_value' => $settings['user_id'],
-      '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
+      '#description' => t("The user id of a Flickr user. If this is left blank, the site's default user will be used. Current default id is @default_id", array('@default_id' => variable_get('flickr_default_userid','')))
     );
     $form["flickr_block_{$delta}_show_n"] = array(
       '#type' => 'select',

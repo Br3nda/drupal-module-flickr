@@ -1,5 +1,5 @@
 <?php
-// $Id: flickrfield.module,v 1.4.2.2 2009/06/24 19:25:34 ksenzee Exp $
+// $Id: flickrfield.module,v 1.4.2.3 2010/05/06 16:33:30 paulbooker Exp $
 
 /**
  * @file
@@ -349,14 +349,39 @@ function theme_flickrfield_photo($img, $photo_url, $formatter, $photo_data, $nod
 }
 
 function theme_flickrfield_photoset($img, $photo_url, $formatter, $photo_data, $node) {
-  $title = is_array($photo_data['title']) ? $photo_data['title']['_content'] : $photo_data['title'];
-  if (arg(0) == 'node' && arg(1) == $node->nid) {
-    $output = '<div class="flickr-photoset-img">'. $img .'</div>';
+  $output = '<div class="flickr-photoset">';
+
+  if (module_exists('flickr_sets')) {
+    $photos = flickr_set_load($photo_data['id']);
+    
+    foreach ((array) $photos['photoset']['photo'] as $photo) {
+    //insert owner into $photo because theme_flickr_photo needs it
+    $photo['owner'] = $photos['photoset']['owner'];
+    $title = is_array($photo['title']) ? $photo['title']['_content'] : $photo['title'];
+    $img = flickr_img($photo, $formatter);
+    $original = flickr_photo_img($photo);
+
+      if (arg(0) == 'node' && arg(1) == $node->nid) {
+        $output .= '<div class="flickr-photoset-img flickr-photoset-img-'. $formatter .'">'. l($img, $original, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) .'</div>';
+      } else {
+      $output .= '<div class="flickr-photoset-img flickr-photoset-img-'. $formatter .'">'. l($img, 'node/'. $node->nid, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) . '</div>';
+      }
+    }
+  } else {
+    $title = is_array($photo_data['title']) ? $photo_data['title']['_content'] : $photo_data['title'];
+    
+    if (arg(0) == 'node' && arg(1) == $node->nid) {
+      $output .= '<div class="flickr-photoset-img">'. $img .'</div>';
+    } else {
+      $output .= '<div class="flickr-photoset-img">'. l($img, 'node/'. $node->nid, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) . '</div>';
+    }
+
   }
-  else {
-    $output = '<div class="flickr-photoset-img">'. l($img, 'node/'. $node->nid, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE)) . '</div>';
-  }
-  $output .= '<div class="flickr-citation"><cite>'. l(t('Source: Flickr'), $photo_url) .'</cite></div>';
+  $output .= '</div>';
+  $output .= '<div class="flickr-photoset-meta">';
+  $output .= '<p>'. $photo_data['description']['_content'] .'</p>';
+  $output .= '<cite>'. l(t('Source: Flickr'), $photo_url) .'</cite>';
+  $output .= '</div>';
   return $output;
 }
 

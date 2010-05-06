@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.42.2.6 2009/03/17 21:56:54 paulbooker Exp $
+// $Id: flickr.module,v 1.42.2.7 2010/05/06 16:33:30 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
