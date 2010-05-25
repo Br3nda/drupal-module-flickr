@@ -42,6 +42,35 @@ function flickr_photo_get_sizes($photo_id) {
 }
 
 /**
+ * @param $nsid
+ *   nsid of the user whose photoset tags will be returned
+ * @param $page   
+ *   page of results to return
+ *
+ * @return
+ *   response from the flickr method flickr.photos.search
+ *   (http://www.flickr.com/services/api/flickr.photos.search.html)
+ */
+
+function flickr_photos_search($nsid, $page = 1, $other_args = array()){
+  $args = array (
+    'user_id' => $nsid,
+    'page' => $page,
+  );
+
+  //set per_page to flickr module default if it is not specified in $other_args
+  if (!isset($other_args['per_page'])) {
+    $args['per_page'] = variable_get('flickr_photos_per_page', 20);
+  }
+
+  $response = flickr_request('flickr.photos.search', array_merge($args, $other_args));
+  if ($response) {
+    return $response['photos'];
+  }
+  return FALSE;
+}
+
+/**
  * @param $photoset_id
  *   id of the photoset to get information about
  *
@@ -75,6 +104,28 @@ function flickr_photoset_get_list($nsid) {
   );
   if ($response) {
     return $response['photosets']['photoset'];
+  }
+  return FALSE;
+}
+
+/**
+ * @param $photoset_id
+ * 
+ *
+ * @return
+ *   response from the flickr method flickr.photosets.getPhotos
+ *   (http://www.flickr.com/services/api/flickr.photosets.getPhotos.html)
+ */
+function flickr_photoset_get_photos($photoset_id) {
+  $response = flickr_request('flickr.photosets.getPhotos',
+  array(
+    'photoset_id' => $photoset_id,
+    'per_page' => 500,
+    'extras' => 'owner',
+    )
+  );
+  if ($response) {
+    return $response;
   }
   return FALSE;
 }
@@ -181,34 +232,6 @@ function flickr_tags_get_list_user($nsid){
   return FALSE;
 }
 
-/**
- * @param $nsid
- *   nsid of the user whose photoset tags will be returned
- * @param $page   
- *   page of results to return
- *
- * @return
- *   response from the flickr method flickr.photos.search
- *   (http://www.flickr.com/services/api/flickr.photos.search.html)
- */
-
-function flickr_photos_search($nsid, $page = 1, $other_args = array()){
-  $args = array (
-    'user_id' => $nsid,
-    'page' => $page,
-  );
-
-  //set per_page to flickr module default if it is not specified in $other_args
-  if (!isset($other_args['per_page'])) {
-    $args['per_page'] = variable_get('flickr_photos_per_page', 20);
-  }
-
-  $response = flickr_request('flickr.photos.search', array_merge($args, $other_args));
-  if ($response) {
-    return $response['photos'];
-  }
-  return FALSE;
-}
 
 /**
  * @param $nid
@@ -218,7 +241,7 @@ function flickr_photos_search($nsid, $page = 1, $other_args = array()){
  *   response from the flickr method flickr.groups.pools.getPhotos
  *   (http://www.flickr.com/services/api/flickr.groups.pools.getPhotos.html)
 */
-function flickr_get_group_photos($nsid, $page = 1, $other_args = array()){
+function flickr_get_group_photos($nsid, $page = 1, $other_args = array()){ // TODO change name to flickr_groups_pools_get_photos() ?
   $args = array (
     'group_id' => $nsid,
     'page' => $page,
