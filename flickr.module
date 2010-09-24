@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.42.2.8 2010/05/24 16:32:38 paulbooker Exp $
+// $Id: flickr.module,v 1.42.2.9 2010/09/24 15:53:25 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -206,7 +206,8 @@ function theme_flickr_photo($photo, $size = NULL, $format = NULL, $attributes = 
   $img = flickr_img($photo, $size, $attributes);
   $photo_url = flickr_photo_page_url($photo['owner'], $photo['id']);
   $title = is_array($photo['title']) ? $photo['title']['_content'] : $photo['title'];
-  return l($img, $photo_url, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE));
+  return l($img, $photo_url, array('attributes' => array('title' => $title, 'class' => 'flickr_photo'), 'absolute' => TRUE, 'html' => TRUE));
+
 }
 
 function theme_flickr_photo_box($photo, $size = NULL, $format = NULL, $attributes = NULL) {
