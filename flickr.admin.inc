@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.admin.inc,v 1.1 2008/03/24 19:57:18 drewish Exp $
+// $Id: flickr.admin.inc,v 1.2 2010/09/25 21:26:37 paulbooker Exp $
 
 /**
  * Implementation of hook_settings
@@ -34,13 +34,32 @@ function flickr_admin_settings() {
     '#default_value' => variable_get('flickr_cache_duration', 3600),
     '#description' => t("The refresh interval indicating how often you want to check cached Flickr API calls are up to date."),
   );
-
+  $form['flickr_photos_per_page'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of photos per photoset'),
+    '#default_value' => variable_get('flickr_photos_per_page', '30'),
+    '#options' => array(
+      '10' => t('10'),
+      '30' => t('30'),
+      '50' => t('50'),
+      '100' => t('100'),
+      '150' => t('150'),
+      '200' => t('200'),
+      '300' => t('300'),
+      '400' => t('400'),
+      '500' => t('500'),
+    ),
+    '#description' => t("The number indicates how many photos of a photoset display in your nodes. After saving the configuration, <a href='?q=admin/settings/performance'>clear the cache</a>."),
+  );
   // we need an api key before we can verify usernames
   if (!$form['flickr_api_key']['#default_value']) {
     $form['flickr_default_userid']['#disabled'] = TRUE;
     $form['flickr_default_userid']['#description'] .= t(" Disabled until a valid API Key is set.");
   }
 
+  // Add a submit handler before the system_settings_form submit handler.
+  $form['#submit'] = array('flickr_admin_settings_submit');
+  
   return system_settings_form($form);
 }
 
@@ -72,6 +91,7 @@ function flickr_admin_settings_submit($form, &$form_state) {
   // clean up the data ...
   $form_state['values']['flickr_api_key'] = trim($form_state['values']['flickr_api_key']);
   $form_state['values']['flickr_api_secret'] = trim($form_state['values']['flickr_api_secret']);
+  $form_state['values']['flickr_photos_per_page'] = trim($form_state['values']['flickr_photos_per_page']);
   $form_state['values']['flickr_default_userid'] = trim($form_state['values']['flickr_default_userid']);
 
   // ... replace the usernames with a user id ...
@@ -82,8 +102,5 @@ function flickr_admin_settings_submit($form, &$form_state) {
       $form_state['values']['flickr_default_userid'] = $user['id'];
     }
   }
-
-  // ... and save the settings
-  system_settings_form_submit($form, &$form_state);
 }
 

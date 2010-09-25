@@ -1,5 +1,5 @@
-; $Id: flickr.info,v 1.7 2008/03/24 19:56:09 drewish Exp $
+; $Id: flickr.info,v 1.8 2010/09/25 21:26:37 paulbooker Exp $
 name = Flickr
-description = Flickr and Drupal integration.
+description = Flickr integration.
 package = Flickr
 core = 6.x

@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_sets.module,v 1.10 2008/11/13 14:14:43 paulbooker Exp $
+// $Id: flickr_sets.module,v 1.11 2010/09/25 21:26:37 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -25,18 +25,22 @@ function flickr_sets_menu() {
     'title' => 'Flickr photo set',
     'page callback' => 'flickr_sets_photoset',
     'page arguments' => array(1, 3),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   return $items;
 }
 
 function flickr_set_load($sid, $page = 1) {
-  return flickr_request('flickr.photosets.getPhotos',
+  // TODO: Not sure why this called for /flickr and does not show for admin role
+  if (is_numeric($sid)) {	
+    return flickr_request('flickr.photosets.getPhotos',
     array(
       'photoset_id' => $sid,
       'page' => $page,
       'per_page' => variable_get('flickr_photos_per_page', 20),
     )
-  );
+    );
+  }
 }
 
 function flickr_sets_photosets($account, $nsid = NULL) {
@@ -154,7 +158,7 @@ function theme_flickr_sets_photoset($uid, $per_page, $photo_arr, $set_info) {
   return $output;
 }
 
-function theme_flickr_sets_photoset_box($ps, $uid, $owner, $size = NULL, $format = NULL) {
+function theme_flickr_sets_photoset_box($ps, $uid, $owner, $size = NULL, $format = NULL) { 
   $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
 
   $output = "<div class='flickr-photoset-box'>\n";

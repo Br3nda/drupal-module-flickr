@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.42 2008/04/02 20:09:05 heine Exp $
+// $Id: flickr.module,v 1.43 2010/09/25 21:26:37 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
 
@@ -66,7 +66,8 @@ function flickr_menu() {
     'description' => 'Flickr photos of default user id.',
   );
   $items['flickr/%user'] = array(
-    'title' => 'Flickr photos',
+    'title callback' => 'flickr_page_title',
+    'title arguments' => array(1),
     'type' => MENU_CALLBACK,
     'page callback' => 'flickr_photos',
     'page arguments' => array(1),
@@ -83,21 +84,22 @@ function flickr_menu() {
 }
 
 function flickr_photos_access($account) {
-  $view_access = FALSE;
+  global $user;
+  $photo_access = FALSE;
   if (!empty($account) && !empty($account->uid)) {
     if (isset($account->flickr['nsid'])) {
-      $view_access = user_access('administer flickr') ||
+      $photo_access = user_access('administer flickr') ||
         // Only admins can view blocked accounts
         $account->status && (
           user_access('view all flickr photos') ||
-          user_access('view own flickr photos') && $GLOBALS['user']->uid == $account->uid
+          user_access('view own flickr photos') && $user->uid == $account->uid
         );
     }
-    else {
+    else { // TODO: Should we display an error message?
       drupal_set_message(t('%user does not have a Flickr account', array('%user' => $account->name)), 'error');
     }
   }
-  return $view_access;
+  return $photo_access;
 }
 
 /**
@@ -105,7 +107,7 @@ function flickr_photos_access($account) {
  * Add an extra field for the user to enter his flickr identifier.
  */
 function flickr_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'form') {
+  if ($op == 'form' && (user_access('view own flickr photos') || user_access('administer flickr'))) {
     if ($category == 'account') {
       $user = user_load(array('uid' => $account->uid));
       $form['flickr'] = array(
@@ -175,8 +177,8 @@ function flickr_photos($user = NULL) {
     $uid = 0;
   }
   else {
-    $account = $user;
-    if ($account->flickr['nsid']) {
+    $account = $user; // TODO: We can just use $account as the argument
+    if ($account->flickr['nsid']) { // TODO: Were actually storing the "identifier" which is potentially the $nsid
       $nsid = $account->flickr['nsid'];
     }
     else {
@@ -186,6 +188,7 @@ function flickr_photos($user = NULL) {
     $uid = $account->uid;
   }
 
+  $nsid = flickr_user_find_by_identifier($nsid);
   $photos = flickr_photos_search($nsid, $pager_page_array[$element] + 1);
   if (!$photos) {
     drupal_set_message(t('No accessible photos found for Flickr %userid', array('%userid' => $nsid)));
@@ -199,17 +202,18 @@ function flickr_photos($user = NULL) {
   return theme('flickr_photos', $uid, $photos);
 }
 
-function theme_flickr_photo($p, $size = NULL, $format = NULL, $attribs = NULL) {
-  $img = flickr_img($p, $size, $attribs);
-  $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
-  $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
-  return l($img, $photo_url, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE));
+function theme_flickr_photo($photo, $size = NULL, $format = NULL, $attributes = NULL) {
+  $img = flickr_img($photo, $size, $attributes);
+  $photo_url = flickr_photo_page_url($photo['owner'], $photo['id']);
+  $title = is_array($photo['title']) ? $photo['title']['_content'] : $photo['title'];
+  return l($img, $photo_url, array('attributes' => array('title' => $title, 'class' => 'flickr_photo'), 'absolute' => TRUE, 'html' => TRUE));
+
 }
 
-function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NULL) {
-  $img = flickr_img($p, $size, $attribs);
-  $title = is_array($p['title']) ? $p['title']['_content'] : $p['title'];
-  $photo_url = flickr_photo_page_url($p['owner'], $p['id']);
+function theme_flickr_photo_box($photo, $size = NULL, $format = NULL, $attributes = NULL) {
+  $img = flickr_img($photo, $size, $attributes);
+  $title = is_array($photo['title']) ? $photo['title']['_content'] : $photo['title'];
+  $photo_url = flickr_photo_page_url($photo['owner'], $photo['id']);
 
   $output = "<div class='flickr-photo-box'>\n";
   $output .= "<a href='$photo_url'>$img</a>";
@@ -217,13 +221,12 @@ function theme_flickr_photo_box($p, $size = NULL, $format = NULL, $attribs = NUL
   $output .= '<div class="flickr-photo-title">'. check_plain($title) ."</div>\n";
   $output .= "</a>";
   $output .= "</div>\n";
-
   return $output;
 }
 
 function theme_flickr_photos($uid, $photos) {
   $output = theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
-  $output .= "<div class='fickr-photoset'>\n";
+  $output .= "<div class='flickr-photoset'>\n";  // TODO: is this correct ? 
   foreach ($photos['photo'] as $photo) {
     $output .= theme('flickr_photo_box', $photo, 'm');
   }
@@ -232,10 +235,27 @@ function theme_flickr_photos($uid, $photos) {
   return $output;
 }
 
-function theme_flickr_photoset($ps, $owner, $size, $attribs = NULL) {
-  $img = flickr_img($ps, $size, $attribs);
-  $photo_url = flickr_photoset_page_url($owner, $ps['id']);
-  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
-  return l($img, $photo_url, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE));
+function theme_flickr_photoset($photoset, $owner, $size, $attributes = NULL) {
+  if (module_exists('flickr_sets')) {
+	$output .= "<div class='flickr-photoset'>\n";
+	$photos = flickr_set_load($photoset['id']);
+	foreach ((array) $photos['photoset']['photo'] as $photo) {
+	  //insert owner into $photo because theme_flickr_photo needs it
+	  $photo['owner'] = $owner;
+	  $output .= theme('flickr_photo', $photo, $size);
+	}
+    $output .= '</div>';
+	return $output;
+  } else {
+    $img = flickr_img($photoset, $size, $attributes);    
+    $output = theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
+    $photo_url = flickr_photoset_page_url($owner, $photoset['id']);    
+    $output .= "<div class='flickr-photoset'>\n";
+    $title = is_array($photoset['title']) ? $photoset['title']['_content'] : $photoset['title'];   
+    return l($img, $photo_url, array('attributes' => array('title' => $title), 'absolute' => TRUE, 'html' => TRUE));
+  }
 }
 
+function flickr_page_title($user) {
+	return 'Flickr photos - '. $user->name;
+}
