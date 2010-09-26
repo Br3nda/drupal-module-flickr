@@ -1,4 +1,4 @@
-/* $Id: flickr.css,v 1.5 2010/09/25 21:26:37 paulbooker Exp $ */
+/* $Id: flickr.css,v 1.5.2.1 2010/09/26 07:26:10 paulbooker Exp $ */
 
 .flickr-photos {}
 
@@ -37,9 +37,3 @@
 .flickr-photoset-title {}
 
 .flickr-photoset-count {}
-
-/** Override for Drupal's default block, 95% width textfields on node forms. */
-.node-form .flickrfield_flickrid {
-  display: inline;
-  width: auto;
-}

@@ -1,6 +1,8 @@
-; $Id: flickr_block.info,v 1.5 2008/03/24 19:56:09 drewish Exp $
+; $Id: flickr_block.info,v 1.5.4.1 2010/09/26 07:26:10 paulbooker Exp $
 name = Flickr Block
-description = Flickr Block for inserting photos into content.
+description = Adds capability to display Flickr photos and sets into blocks.
 dependencies[] = flickr
 package = Flickr
-core = 6.x
+core = 7.x
+
+files[] = flickr_block.module

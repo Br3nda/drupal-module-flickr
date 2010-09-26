@@ -1,50 +1,44 @@
 <?php
-// $Id: flickr_filter.module,v 1.13 2010/09/25 21:26:37 paulbooker Exp $
+// $Id: flickr_filter.module,v 1.13.2.1 2010/09/26 07:26:10 paulbooker Exp $
 
-require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
 
-function flickr_filter_tips($delta, $format, $long = FALSE) {
-  switch ($delta) {
-    case 0:
-      $output = t('Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m].');
-      if ($long) {
-        $output .= t('The size parameter can be one of the following:');
-        $items = array();
-        foreach (flickr_photo_sizes() as $key => $text) {
-          $items[] = "<code>$key</code> &mdash; (". $text['label'] .') '. $text['description'];
-        }
-        $output .= theme('item_list', $items);
-      }
-      return $output;
-  }
+/**
+ * Implements hook_filter_info().
+ */
+function flickr_filter_info() {
+  $filters['filter_flickr'] = array(
+    'title' =>  t('Flickr linker'),
+    'description' => t('Allows you to Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m]'),
+    'process callback' => '_filter_flickr',
+    'tips callback' => '_filter_flickr_tips',
+  );
+  return $filters;
 }
 
-function flickr_filter($op, $delta = 0, $format = -1, $text = '') {
-  if ($op == 'list') {
-    return array(0 => t('Flickr linker'));
+/**
+ * Returns the filter information for the filter help page
+ */
+function _filter_flickr_tips($filter, $format, $long = FALSE) {
+  $output = t('Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m].');
+  if ($long) {
+    $output .= ' ' . t('The size parameter can be one of the following:');
+    $items = array();
+    foreach (flickr_photo_sizes() as $key => $text) {
+      $items[] = "<code>$key</code> &mdash; (" . $text['label'] . ') ' . $text['description'];
+    }
+    $output .= theme('item_list', array('items' => $items));
   }
+  return $output;
+}
 
-  switch ($delta) {
-    case 0:
-      switch ($op) {
-        case 'description':
-          return t('Allows you to Insert Flickr images: [flickr-photo:id=230452326,size=s] or [flickr-photoset:id=72157594262419167,size=m]');
-
-        case 'no cache':
-          // TODO: only return true when testing the filter
-          // return TRUE;
-          return FALSE;
-
-        case 'prepare':
-          return $text;
-
-        case 'process':
-          $text = preg_replace_callback('/\[flickr-photo:(.+?)\]/', 'flickr_filter_callback_photo', $text);
-          $text = preg_replace_callback('/\[flickr-photoset:(.+?)\]/', 'flickr_filter_callback_photoset', $text);
-          return $text;
-      }
-      break;
-  }
+/**
+ * Processes the flickr filter
+ */
+function _filter_flickr($text, $filter) {
+  $text = preg_replace_callback('/\[flickr-photo:(.+?)\]/', 'flickr_filter_callback_photo', $text);
+  $text = preg_replace_callback('/\[flickr-photoset:(.+?)\]/', 'flickr_filter_callback_photoset', $text);
+  return $text;
 }
 
 /**
@@ -79,10 +73,9 @@ function flickr_filter_split_config($string) {
  */
 function flickr_filter_callback_photo($matches) {
   list($config, $attribs) = flickr_filter_split_config($matches[1]);
-
   if (isset($config['id'])) {
     if ($photo = flickr_photo_get_info($config['id'])) {
-      return theme('flickr_filter_photo', $photo, $config['size'], $attribs);
+      return theme('flickr_filter_photo', array('photo' => $photo, 'size' => $config['size'], 'attribs' => $attribs));
     }
   }
   return '';
@@ -96,30 +89,30 @@ function flickr_filter_callback_photoset($matches) {
 
   if (isset($config['id'])) {
     if ($photoset = flickr_photoset_get_info($config['id'])) {
-      return theme('flickr_filter_photoset', $photoset, $photoset['owner'], $config['size'], $attribs);
+      return theme('flickr_filter_photoset', array('photoset' => $photoset, 'owner' => $photoset['owner'], 'size' => $config['size'], 'attribs' => $attribs));
     }
   }
   return '';
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function flickr_filter_theme() {
   return array(
     'flickr_filter_photo' => array(
-      'arguments' => array('p', 'size', 'attribs'),
+      'variables' => array('photo', 'size', 'attribs'),
     ),
     'flickr_filter_photoset' => array(
-      'arguments' => array('ps', 'owner', 'size', 'attribs'),
+      'variables' => array('photoset', 'owner', 'size', 'attribs'),
     ),
   );
 }
 
-function theme_flickr_filter_photo($p, $size, $attribs) {
-  return theme('flickr_photo', $p, $size, NULL, $attribs);
+function theme_flickr_filter_photo($variables) {
+  return theme('flickr_photo', $variables);
 }
 
-function theme_flickr_filter_photoset($ps, $owner, $size, $attribs) {
-  return theme('flickr_photoset', $ps, $owner, $size, $attribs);
+function theme_flickr_filter_photoset($variables) {
+  return theme('flickr_photoset', $variables);
 }

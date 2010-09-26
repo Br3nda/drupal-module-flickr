@@ -5,7 +5,7 @@ Name:
 
 Requirements:
 ------------
-This module requires Drupal 6.X and a Flickr API key.
+This module requires Drupal 7.X and a Flickr API key.
 
 Overview:
 --------
@@ -15,13 +15,12 @@ that you can enable as well.
 
 Installation and configuration:
 ------------------------------
-1.) Simply extract the download package in your modules directory '/modules'
-    or '/sites/all/modlues'.
-2.) Enable the module in 'admin/build/modules/'.
-3.) Configure the API Key '/admin/settings/flickr'.
+1.) Simply extract the download package in your modules directory, e.g. '/sites/all/modules'.
+2.) Enable the module in 'admin/modules'.
+3.) Configure the API Key '/admin/config/media/flickr'.
 4.) Add the flickr filter to one of your input formats by following
-the configure link 'admin/settings/filters'.
-5.) Allow permissions '/admin/user/access'.
+the configure link 'admin/config/content/formats'.
+5.) Allow permissions '/admin/people/permissions'.
 
 Usage:
 ------

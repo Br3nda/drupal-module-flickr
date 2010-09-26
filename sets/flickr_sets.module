@@ -1,16 +1,15 @@
 <?php
-// $Id: flickr_sets.module,v 1.11 2010/09/25 21:26:37 paulbooker Exp $
+// $Id: flickr_sets.module,v 1.11.2.1 2010/09/26 07:26:10 paulbooker Exp $
 
-require_once(drupal_get_path('module', 'flickr') .'/flickr.inc');
+require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function flickr_sets_menu() {
   $items['flickr/%user/sets'] = array(
     'title' => 'Sets',
     'description' => 'Display the Flickr photosets for the specified user',
-    'type' => MENU_LOCAL_TASK,
     'page callback' => 'flickr_sets_photosets',
     'page arguments' => array(1),
     'access callback' => 'flickr_photos_access',
@@ -19,26 +18,27 @@ function flickr_sets_menu() {
   $items['flickr/%user/sets/list'] = array(
     'title' => 'List',
     'description' => 'Display the Flickr photosets for the specified user',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'type' => MENU_LOCAL_TASK,
   );
   $items['flickr/%user/sets/%flickr_set'] = array(
     'title' => 'Flickr photo set',
     'page callback' => 'flickr_sets_photoset',
     'page arguments' => array(1, 3),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'flickr_photos_access',
+    'access arguments' => array(1),
   );
   return $items;
 }
 
 function flickr_set_load($sid, $page = 1) {
   // TODO: Not sure why this called for /flickr and does not show for admin role
-  if (is_numeric($sid)) {	
+  if (is_numeric($sid)) { 
     return flickr_request('flickr.photosets.getPhotos',
-    array(
-      'photoset_id' => $sid,
-      'page' => $page,
-      'per_page' => variable_get('flickr_photos_per_page', 20),
-    )
+      array(
+        'photoset_id' => $sid,
+        'page' => $page,
+        'per_page' => variable_get('flickr_photos_per_page', 20),
+      )
     );
   }
 }
@@ -46,7 +46,7 @@ function flickr_set_load($sid, $page = 1) {
 function flickr_sets_photosets($account, $nsid = NULL) {
   global $pager_page_array, $pager_total, $pager_total_items, $user;
 
-  drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
+  drupal_add_css(drupal_get_path('module', 'flickr') . '/flickr.css');
 
   $uid = $account->uid;
   $nsid = $account->flickr['nsid'];
@@ -57,11 +57,11 @@ function flickr_sets_photosets($account, $nsid = NULL) {
   $set_response = flickr_photoset_get_list($nsid);
 
   if ($set_response === FALSE) {
-    drupal_set_message(t('Error retrieving %user\'s photosets from Flickr'), array('%user' => $account->name));
+    drupal_set_message(t('Error retrieving %user\'s photosets from Flickr', array('%user' => $account->name)));
     return '';
   }
   if (!$set_response || empty($set_response)) {
-      drupal_set_message(t('%user has no photosets.', array('%user' => $account->name)));
+    drupal_set_message(t('%user has no photosets', array('%user' => $account->name)));
     return '';
   }
 
@@ -69,13 +69,13 @@ function flickr_sets_photosets($account, $nsid = NULL) {
   $pager_total[$element] = ceil(count($set_response)/variable_get('flickr_photosets_per_page', 20));
   $pager_total_items[$element] = count($set_response);
 
-  return theme('flickr_sets_photosets', $uid, $nsid, $set_response);
+  return theme('flickr_sets_photosets', array('uid' => $uid, 'nsid' => $nsid, 'photosets' => $set_response));
 }
 
 function flickr_sets_photoset($account, $set) {
   global $pager_page_array, $pager_total, $pager_total_items, $user;
 
-  drupal_add_css(drupal_get_path('module', 'flickr') .'/flickr.css');
+  drupal_add_css(drupal_get_path('module', 'flickr') . '/flickr.css');
 
   $uid = $user->uid;
   $nsid = $account->flickr['nsid'];
@@ -85,7 +85,7 @@ function flickr_sets_photoset($account, $set) {
 
   //make sure that $nsid is the real owner of $set_id
   if ($nsid != $set_info['owner']) {
-    drupal_goto('flickr/'. $uid .'/sets');
+    drupal_goto('flickr/' . $uid . '/sets');
   }
 
   //display photos
@@ -102,15 +102,15 @@ function flickr_sets_photoset($account, $set) {
     return '';
   }
   elseif (!isset($set_response['photoset']['photo']) || empty($set_response['photoset']['photo'])) {
-      drupal_set_message('This photoset is empty');
-      return '';
+    drupal_set_message(t('This photoset is empty'));
+    return '';
   }
 
   //set pager information we just acquired
   $pager_total_items[$element] = $set_response['photoset']['total'];
   $pager_total[$element] = $set_response['photoset']['pages'];
 
-  return theme('flickr_sets_photoset', $uid, $per_page, $set_response, $set_info);
+  return theme('flickr_sets_photoset', array('uid' => $uid, 'per_page' => $per_page, 'photo_arr' => $set_response, 'set_info' => $set_info));
 }
 
 /**
@@ -119,52 +119,63 @@ function flickr_sets_photoset($account, $set) {
 function flickr_sets_theme() {
   return array(
     'flickr_sets_photosets' => array(
-      'arguments' => array('uid', 'nsid', 'photosets'),
+      'variables' => array('uid', 'nsid', 'photosets'),
     ),
     'flickr_sets_photoset' => array(
-      'arguments' => array('uid', 'per_page', 'photo_arr', 'set_info'),
+      'variables' => array('uid', 'per_page', 'photo_arr', 'set_info'),
     ),
     'flickr_sets_photoset_box' => array(
-      'arguments' => array('ps', 'uid', 'owner', 'size' => 'NULL', 'format' => NULL),
+      'variables' => array('uid', 'photoset', 'size' => 'NULL', 'format' => NULL),
     ),
   );
 }
 
-function theme_flickr_sets_photosets($uid, $nsid, $photosets) {
-  $output =
-    theme('pager', NULL, variable_get('flickr_photosets_per_page', 20));
-  $output .= "<div class='fickr-photosets'>\n";
+function theme_flickr_sets_photosets($variables) {
+  $uid = $variables['uid'];
+  $nsid = $variables['nsid'];
+  $photosets = $variables['photosets'];
+
+  $output = theme('pager', array('quantity' => variable_get('flickr_photosets_per_page', 20)));
+  $output .= "<div class='flickr-photosets'>\n";
   foreach ((array) $photosets as $photoset) {
-    $output .= theme('flickr_sets_photoset_box', $photoset, $uid, $nsid, 's');
+    $output .= theme('flickr_sets_photoset_box', array('photoset' => $photoset, 'uid' => $uid, 'nsid' => $nsid, 'size' => 's'));
   }
   $output .= '</div>';
-  $output .=
-    theme('pager', NULL, variable_get('flickr_photosets_per_page', 20));
+  $output .= theme('pager', array('quantity' => variable_get('flickr_photosets_per_page', 20)));
   return $output;
 }
 
-function theme_flickr_sets_photoset($uid, $per_page, $photo_arr, $set_info) {
-  $output =
-    theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
-  $output .= "<div class='fickr-photoset'>\n";
+function theme_flickr_sets_photoset($variables) {
+  $uid = $variables['uid'];
+  $per_page = $variables['per_page'];
+  $photo_arr = $variables['photo_arr'];
+  $set_info = $variables['set_info'];
+  
+  $output = theme('pager', array('quantity' => variable_get('flickr_photos_per_page', 20)));
+  $output .= "<div class='flickr-photoset'>\n";
   foreach ((array) $photo_arr['photoset']['photo'] as $photo) {
     //insert owner into $photo because theme_flickr_photo_box/flickr_photo_page_url needs it
     $photo['owner'] = $set_info['owner'];
-    $output .= theme('flickr_photo_box', $photo, 'm');
+    $output .= theme('flickr_photo_box', array('photo' => $photo, 'size' => 'm'));
   }
   $output .= '</div>';
-  $output .=
-    theme('pager', NULL, variable_get('flickr_photos_per_page', 20));
-  return $output;
+  $output .= theme('pager', array('quantity' => variable_get('flickr_photos_per_page', 20)));
+  
+  return $output; 
 }
 
-function theme_flickr_sets_photoset_box($ps, $uid, $owner, $size = NULL, $format = NULL) { 
-  $title = is_array($ps['title']) ? $ps['title']['_content'] : $ps['title'];
+function theme_flickr_sets_photoset_box($variables) {
+  $uid = $variables['uid'];
+  $photoset = $variables['photoset'];
+  $size = $variables['size'];
+  $format = $variables['format'];
+   
+  $title = is_array($photoset['title']) ? $photoset['title']['_content'] : $photoset['title'];
 
   $output = "<div class='flickr-photoset-box'>\n";
-  $output .= l(flickr_img($ps, $size) ."\n", "flickr/{$uid}/sets/{$ps['id']}", array('html' => TRUE));
-  $output .= l('<div class="flickr-photoset-title">'. $title ."</div>\n", "flickr/{$uid}/sets/{$ps['id']}", array('html' => TRUE));
-  $output .= '<div class="flickr-photoset-count">'. format_plural($ps['photos'], '@count photo', '@count photos') ."</div>\n";
+  $output .= l(flickr_img($photoset, $size), "flickr/{$uid}/sets/{$photoset['id']}", array('html' => TRUE)) . "\n";
+  $output .= '<div class="flickr-photoset-title">' . l($title, "flickr/{$uid}/sets/{$photoset['id']}") . "</div>\n";
+  $output .= '<div class="flickr-photoset-count">' . format_plural($photoset['photos'], '@count photo', '@count photos') . "</div>\n";
   $output .= "</div>\n";
 
   return $output;
