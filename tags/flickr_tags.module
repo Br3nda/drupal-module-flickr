@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_tags.module,v 1.5.4.1 2010/09/26 07:26:10 paulbooker Exp $
+// $Id: flickr_tags.module,v 1.5.4.2 2010/09/29 22:32:29 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
 
@@ -7,11 +7,12 @@ require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
  * Implementation of hook_menu().
  */
 function flickr_tags_menu() {
-  $items['flickr/%user/tags'] = array(
-    'title' => 'Tags',
-    'description' => 'Flickr main tag cloud page',
-    'page callback' => 'flickr_tags_cloud',
-    'page arguments' => array(1),
+  $items['flickr/%user/tags/%'] = array(
+    'title' => 'Photos for tag',
+    'description' => 'Show Flickr photos for a particular tag',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'flickr_tags_photos',
+    'page arguments' => array(1, 3),
     'access callback' => 'flickr_photos_access',
     'access arguments' => array(1),
   );
@@ -19,6 +20,10 @@ function flickr_tags_menu() {
     'title' => 'Cloud',
     'description' => 'Flickr main tag cloud page',
     'type' => MENU_DEFAULT_LOCAL_TASK, 
+    'page callback' => 'flickr_tags_list',
+    'page arguments' => array(1),
+    'access callback' => 'flickr_photos_access',
+    'access arguments' => array(1),
   );
   $items['flickr/%user/tags/list'] = array(
     'title' => 'List',
@@ -29,14 +34,16 @@ function flickr_tags_menu() {
     'access callback' => 'flickr_photos_access',
     'access arguments' => array(1),
   );
-  $items['flickr/%user/tag/%flickr_tag'] = array(
-    'title' => 'Photos for tag',
-    'description' => 'Show Flickr photos for a particular tag',
-    'page callback' => 'flickr_tags_photos',
-    'page arguments' => array(1, 3),
+  $items['flickr/%user/tags'] = array(
+    'title' => 'Tags',
+    'description' => 'Flickr main tag cloud page',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'flickr_tags_cloud',
+    'page arguments' => array(1),
     'access callback' => 'flickr_photos_access',
     'access arguments' => array(1),
   );
+
   return $items;
 }
 
@@ -93,7 +100,7 @@ function flickr_tags_photos($account, $tagstring) {
   global $pager_page_array, $pager_total, $pager_total_items;
 
   drupal_add_css(drupal_get_path('module', 'flickr') . '/flickr.css');
-  drupal_set_title(t('Flickr photos of @user tagged %tag', array('@user' => $account->name, '%tag' => $tagstring)));
+  drupal_set_title(t('Flickr photos of @user tagged @tag', array('@user' => $account->name, '@tag' => $tagstring)));
 
   $tags = explode(',', $tagstring);
   $nsid = $account->flickr['nsid'];
@@ -101,7 +108,7 @@ function flickr_tags_photos($account, $tagstring) {
   //set this to something else if you want multiple pagers
   $element = 0;
   $pager_page_array[$element] = empty($_GET['page']) ? 0 : (int) $_GET['page'];
-  
+
   $photo_arr = flickr_photos_search($nsid, $pager_page_array[$element] + 1, flickr_tag_request_args($tags));
 
   if ($photo_arr === FALSE) {
@@ -187,7 +194,7 @@ function theme_flickr_tags_cloud($variables) {
     $font_size = round(($max_font-$min_font) * sqrt($occurences/$max_occur) + $min_font, 1);
     
     $output .= "<li style='font-size: {$font_size}em'>";
-    $output .= l($tagname, "flickr/$uid/tag/$tagname");
+    $output .= l($tagname, "flickr/$uid/tags/$tagname");
     $output .= "</li>\n";
     
   }

@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr.module,v 1.43.2.1 2010/09/26 07:26:10 paulbooker Exp $
+// $Id: flickr.module,v 1.43.2.2 2010/09/29 22:32:29 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
 
@@ -15,15 +15,13 @@ function flickr_menu() {
     'description' => 'Change settings for the flickr module.',
     'file' => 'flickr.admin.inc',
   );
-  $items['flickr'] = array(
-    'title' => 'Flickr photos',
+  $items['flickr/auth'] = array(
     'type' => MENU_CALLBACK,
-    'page callback' => 'flickr_photos',
     'access callback' => TRUE,
-    'description' => 'Flickr photos of default user id.',
+    'page callback' => 'flickr_auth_callback',
   );
   $items['flickr/%user'] = array(
-    'title callback' => 'flickr_page_title',
+    'title callback' => 'flickr_photos_page_title',
     'title arguments' => array(1),
     'description' => 'Flickr photos of specified user.',
     'type' => MENU_CALLBACK,
@@ -31,6 +29,13 @@ function flickr_menu() {
     'page arguments' => array(1),
     'access callback' => 'flickr_photos_access',
     'access arguments' => array(1),
+  );
+  $items['flickr'] = array(
+    'title' => 'Flickr photos',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'flickr_photos',
+    'access callback' => TRUE,
+    'description' => 'Flickr photos of default user id.',
   );
   $items['user/%user/flickr'] = array(
     'title' => 'Flickr',
@@ -40,11 +45,6 @@ function flickr_menu() {
     'page arguments' => array(1),
     'access callback' => 'flickr_photos_access',
     'access arguments' => array(1),
-  );
-  $items['flickr/auth'] = array(
-    'type' => MENU_CALLBACK,
-    'access callback' => TRUE,
-    'page callback' => 'flickr_auth_callback',
   );
   return $items;
 }
@@ -96,14 +96,17 @@ function flickr_permission() {
  * Displays the links to the user's photos, sets and tags
  */
 function flickr_user_page($user) {
-  drupal_set_title(flickr_page_title($user));
-  $links['items'] = array(
-    l(t('@name\'s photos', array('@name' => $user->name)), 'flickr/' . $user->uid),
-    l(t('@name\'s photo sets', array('@name' => $user->name)), 'flickr/' . $user->uid . '/sets'),
-    l(t('@name\'s tags', array('@name' => $user->name)), 'flickr/' . $user->uid . '/tags'),
-  );
-  
-  return theme('item_list', $links) . ' ';
+  drupal_set_title(flickr_photos_page_title($user));
+  $links['items'][] = l(t('@name\'s photos', array('@name' => $user->name)), 'flickr/' . $user->uid);
+
+  if (module_exists('flickr_sets')) {
+    $links['items'][]  = l(t('@name\'s photo sets', array('@name' => $user->name)), 'flickr/' . $user->uid . '/sets');
+  }
+
+  if (module_exists('flickr_tags')) {
+	$links['items'][]  = l(t('@name\'s tags', array('@name' => $user->name)), 'flickr/' . $user->uid . '/tags');		
+  }
+  return theme('item_list', $links) . ' ';	
 }
 
 function flickr_photos_access($account) {
@@ -125,6 +128,7 @@ function flickr_photos_access($account) {
 }
 
 function flickr_photos($user = NULL) {
+  drupal_set_title(flickr_photos_page_title($user));
   drupal_add_css(drupal_get_path('module', 'flickr') . '/flickr.css');
 
   global $pager_page_array, $pager_total, $pager_total_items;
@@ -252,7 +256,7 @@ function flickr_user_account_form_validate(&$form, &$form_state) {
   }
 }
 
-function flickr_page_title($user) {
+function flickr_photos_page_title($user) {
   return 'Flickr photos - ' . $user->name;
 }
 

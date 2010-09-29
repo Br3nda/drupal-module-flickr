@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_block.module,v 1.16.2.1 2010/09/26 07:26:10 paulbooker Exp $
+// $Id: flickr_block.module,v 1.16.2.2 2010/09/29 22:32:29 paulbooker Exp $
 
 /**
  * Implements hook_block_info().
@@ -35,14 +35,15 @@ function flickr_block_configure($delta = '') {
   }
   unset($size_options['b']);
   unset($size_options['o']);
-
-  $settings = variable_get('flickr_block_' . $delta, array('user_id' => '', 'show_n' => 4, 'size' => 's', 'photoset_id' => ''));
+  
+  $settings = variable_get('flickr_block_' . $delta, array('user_id' => '', 'show_n' => 4, 'size' => 's','photoset_id' => ''));
 
   $form = array();
+  $user_id = array_key_exists('user_id', $settings) ? $settings['user_id'] : '';
   $form["flickr_block_{$delta}_user_id"] = array(
     '#type' => 'textfield',
     '#title' => t('Flickr User Id'),
-    '#default_value' => $settings['user_id'],
+    '#default_value' => $user_id,
     '#description' => t("The user id of a Flickr user. If this is left blank, the sites's default user will be used. Current default id is " . variable_get('flickr_default_userid', '')),
   );
   $form["flickr_block_{$delta}_show_n"] = array(
@@ -88,6 +89,7 @@ function flickr_block_configure($delta = '') {
       $form["flickr_block_{$delta}_user_id"]['#required'] = TRUE;
       break;
     case 7: // sitewide, random
+      unset($form["flickr_block_{$delta}_user_id"]);
       $form["flickr_block_{$delta}_photoset"] = array(
         '#type' => 'textfield',
         '#title' => t('Flickr Photoset Id'),
@@ -103,7 +105,7 @@ function flickr_block_configure($delta = '') {
 /**
  * Implements hook_block_save().
  */
-function flickr_block_save($delta = '', $edit = array()) {
+function flickr_block_save($delta = '', $edit = array()) {  
   switch ($delta) {
     case 0:
     case 1:
@@ -126,7 +128,6 @@ function flickr_block_save($delta = '', $edit = array()) {
       break;
     case 7:
       variable_set('flickr_block_' . $delta, array(
-        'user_id' => $edit["flickr_block_{$delta}_user_id"],
         'show_n' => (int) $edit["flickr_block_{$delta}_show_n"],
         'size' => $edit["flickr_block_{$delta}_size"],
         'photoset_id' => $edit["flickr_block_{$delta}_photoset"],

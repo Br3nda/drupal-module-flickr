@@ -1,5 +1,5 @@
 <?php
-// $Id: flickr_sets.module,v 1.11.2.1 2010/09/26 07:26:10 paulbooker Exp $
+// $Id: flickr_sets.module,v 1.11.2.2 2010/09/29 22:32:29 paulbooker Exp $
 
 require_once(drupal_get_path('module', 'flickr') . '/flickr.inc');
 
@@ -21,7 +21,7 @@ function flickr_sets_menu() {
     'type' => MENU_LOCAL_TASK,
   );
   $items['flickr/%user/sets/%flickr_set'] = array(
-    'title' => 'Flickr photo set',
+    'title' => 'Flickr photoset',
     'page callback' => 'flickr_sets_photoset',
     'page arguments' => array(1, 3),
     'access callback' => 'flickr_photos_access',
@@ -43,9 +43,14 @@ function flickr_set_load($sid, $page = 1) {
   }
 }
 
+function flickr_sets_page_title($user) {
+  return 'Flickr photosets - ' . $user->name;
+}
+
 function flickr_sets_photosets($account, $nsid = NULL) {
   global $pager_page_array, $pager_total, $pager_total_items, $user;
 
+  drupal_set_title(flickr_sets_page_title($user));
   drupal_add_css(drupal_get_path('module', 'flickr') . '/flickr.css');
 
   $uid = $account->uid;
